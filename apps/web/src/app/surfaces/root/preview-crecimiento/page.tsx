@@ -16,13 +16,16 @@ export default function PreviewCrecimientoPage() {
   return (
     <>
       <PreviewBanner />
-      <GrowthPath
-        petName={demoPet.name}
-        birthDate={demoPet.birthDate}
-        milestones={DEMO_MILESTONES}
-        backHref="/preview-home"
-        manageHref="/preview-manage"
-      />
+      <main>
+        <GrowthPath
+          petName={demoPet.name}
+          species={demoPet.species}
+          birthDate={demoPet.birthDate}
+          milestones={DEMO_MILESTONES}
+          backHref="/preview-home"
+          manageHref="/preview-manage"
+        />
+      </main>
     </>
   );
 }

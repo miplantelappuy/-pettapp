@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useScrollReveal } from "@/lib/hooks/useScrollReveal";
 import type { PetHomeData } from "@/lib/pets-data";
+import type { MilestoneRow } from "@/lib/milestones-data";
+import { GrowthPath } from "./crecimiento/GrowthPath";
 import styles from "./OwnerHome.module.css";
 
 const SPECIES_LABEL: Record<string, string> = {
@@ -19,8 +21,7 @@ interface Props {
   giftsHref?: string;
   vaccinationsCount?: number;
   nextVaccineDue?: string | null;
-  milestonesCount?: number;
-  growthHref?: string;
+  milestones?: MilestoneRow[];
 }
 
 // Home del panel de dueño, versión glassmorphism: una foto/video a pantalla
@@ -37,8 +38,7 @@ export function OwnerHome({
   giftsHref = "/regalos",
   vaccinationsCount = 0,
   nextVaccineDue = null,
-  milestonesCount = 0,
-  growthHref = "/crecimiento",
+  milestones = [],
 }: Props) {
   const speciesLabel = SPECIES_LABEL[pet.species] ?? "compañero";
   const heroIsVideo = pet.heroMedia?.type === "video";
@@ -120,21 +120,6 @@ export function OwnerHome({
 
       <Reveal>
         <section className={`${styles.section} ${styles.panel} glass`}>
-          <span className={styles.eyebrow}>Contacto de emergencia</span>
-          <h2 className={styles.panelTitle}>
-            {pet.emergencyContactPhone
-              ? `${pet.emergencyContactName || "Sin nombre"} · ${pet.emergencyContactPhone}`
-              : "Todavía no cargaste un contacto"}
-          </h2>
-          <p className={styles.panelText}>Es lo que ve quien encuentra a {pet.name} y escanea su chapita.</p>
-          <Link href={manageHref} className={styles.panelLink}>
-            Editar contacto →
-          </Link>
-        </section>
-      </Reveal>
-
-      <Reveal>
-        <section className={`${styles.section} ${styles.panel} glass`}>
           <span className={styles.eyebrow}>Vacunas</span>
           <h2 className={styles.panelTitle}>
             {vaccinationsCount > 0
@@ -151,25 +136,6 @@ export function OwnerHome({
       </Reveal>
 
       <Reveal>
-        <section className={`${styles.section} ${styles.panel} glass`}>
-          <span className={styles.eyebrow}>Crecimiento</span>
-          <h2 className={styles.panelTitle}>
-            {milestonesCount > 0
-              ? `${milestonesCount} ${milestonesCount === 1 ? "hito cargado" : "hitos cargados"}`
-              : "El camino de vida de tu mascota"}
-          </h2>
-          <p className={styles.panelText}>
-            {milestonesCount > 0
-              ? "Un recorrido con los momentos importantes, desde que llegó hasta hoy."
-              : "Cargá los momentos importantes desde Gestionar y arma el recorrido."}
-          </p>
-          <Link href={growthHref} className={styles.panelLink}>
-            Ver el camino →
-          </Link>
-        </section>
-      </Reveal>
-
-      <Reveal>
         <section className={`${styles.section} ${styles.comingSoonRow}`}>
           {["Salud"].map((label) => (
             <div key={label} className={`${styles.comingSoonTile} glass`}>
@@ -179,6 +145,11 @@ export function OwnerHome({
           ))}
         </section>
       </Reveal>
+
+      {/* Crecimiento va directo acá abajo de todo, sin link a otra página —
+          la animación de las huellas es la que pidió el dueño ver sin tener
+          que "entrar" a ningún lado. */}
+      <GrowthPath petName={pet.name} species={pet.species} birthDate={pet.birthDate} milestones={milestones} manageHref={manageHref} />
     </main>
   );
 }

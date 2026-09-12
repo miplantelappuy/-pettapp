@@ -27,12 +27,15 @@ export default async function CrecimientoPage() {
   const milestones = await getMilestones(pet.id);
 
   return (
-    <GrowthPath
-      petName={pet.name}
-      birthDate={pet.birthDate}
-      milestones={milestones}
-      backHref={prefix || "/"}
-      manageHref={`${prefix}/gestionar`}
-    />
+    <main>
+      <GrowthPath
+        petName={pet.name}
+        species={pet.species}
+        birthDate={pet.birthDate}
+        milestones={milestones}
+        backHref={prefix || "/"}
+        manageHref={`${prefix}/gestionar`}
+      />
+    </main>
   );
 }

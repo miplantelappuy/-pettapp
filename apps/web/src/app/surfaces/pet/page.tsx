@@ -60,8 +60,7 @@ export default async function PetHomePage() {
       giftsCount={giftsCount}
       vaccinationsCount={vaccinations.length}
       nextVaccineDue={nextVaccineDue}
-      milestonesCount={milestones.length}
-      growthHref={`${prefix}/crecimiento`}
+      milestones={milestones}
     />
   );
 }

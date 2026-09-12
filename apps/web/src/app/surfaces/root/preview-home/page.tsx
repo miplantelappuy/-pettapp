@@ -2,6 +2,12 @@ import { getDemoPetHomeData } from "@/lib/demo-pet";
 import { OwnerHome } from "../../pet/OwnerHome";
 import { PreviewBanner } from "../PreviewBanner";
 
+const DEMO_MILESTONES = [
+  { id: "demo-m1", title: "Llegó a casa", occurredOn: "2024-06-20", photoUrl: "https://placedog.net/800/800?id=12" },
+  { id: "demo-m2", title: "Primer verano en la playa", occurredOn: "2024-12-15", photoUrl: "https://placedog.net/800/800?id=25" },
+  { id: "demo-m3", title: "Primer cumpleaños", occurredOn: "2025-06-15", photoUrl: "https://placedog.net/800/800?id=40" },
+];
+
 // Vista previa TEMPORAL del panel de dueño (rediseño glassmorphism): permite
 // verlo sin necesitar todavía el dominio propio ni una chapita real
 // vinculada con su PIN. Usa datos de muestra. Se puede borrar el día que
@@ -19,8 +25,7 @@ export default function PreviewHomePage() {
         giftsHref="/preview-regalos"
         vaccinationsCount={2}
         nextVaccineDue="2026-03-10"
-        milestonesCount={2}
-        growthHref="/preview-crecimiento"
+        milestones={DEMO_MILESTONES}
       />
     </>
   );
