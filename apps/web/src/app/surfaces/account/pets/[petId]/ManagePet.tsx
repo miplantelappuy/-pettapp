@@ -43,6 +43,10 @@ interface Props {
   /** true si emergencyHref apunta al perfil real (chapita ya vinculada), para
    * que el texto del link no prometa algo que todavía no existe. */
   emergencyIsReal?: boolean;
+  /** El QR de verdad de la chapita ya vinculada, como data URL lista para
+   * <img> (generado en el server con la librería "qrcode") — null si
+   * todavía no hay ninguna chapita activa para esta mascota. */
+  qrDataUrl?: string | null;
 }
 
 export function ManagePet({
@@ -54,6 +58,7 @@ export function ManagePet({
   accountHref,
   emergencyHref = "/preview-emergency",
   emergencyIsReal = false,
+  qrDataUrl = null,
 }: Props) {
   const [pet, setPet] = useState(initialPet);
   const [media, setMedia] = useState<ResolvedMedia[]>(initialPet.media);
@@ -362,6 +367,28 @@ export function ManagePet({
         <a href={emergencyHref} target="_blank" rel="noreferrer" className={styles.panelLink}>
           {emergencyIsReal ? `Ver el panel de emergencia de ${pet.name} →` : "Ver un ejemplo (todavía no vinculaste una chapita) →"}
         </a>
+      </section>
+
+      {/* ── Chapita / QR ── */}
+      <section className={`${styles.section} glass`}>
+        <h2 className={styles.sectionTitle}>Tu chapita</h2>
+        {qrDataUrl ? (
+          <>
+            <p className={styles.hint}>
+              Este es el código de la chapita de {pet.name} — escaneálo con la cámara del celular (la de fotos
+              normal, no hace falta ninguna app) para probar exactamente lo que ve alguien que la encuentra.
+            </p>
+            <img src={qrDataUrl} alt={`Código QR de la chapita de ${pet.name}`} width={180} height={180} />
+          </>
+        ) : (
+          <p className={styles.hint}>
+            Todavía no tenés una chapita vinculada a {pet.name} — entrá a{" "}
+            <a href="/panel" className={styles.panelLink}>
+              /panel
+            </a>{" "}
+            y usá &quot;Crear chapita de prueba&quot; para generar una.
+          </p>
+        )}
       </section>
 
       {/* ── Vacunas ── */}
