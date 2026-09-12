@@ -74,14 +74,19 @@ export function ManagePet({ petId, initialPet, initialVaccinations, demoMode = f
     await fetch(`/api/pets/media/${mediaId}`, { method: "DELETE" });
   }
 
-  async function addPhotoFromFile(file: File) {
+  async function addMediaFromFile(file: File) {
+    // La portada puede ser foto O video (sin sonido, como pidió el dueño) —
+    // un solo botón de "agregar", el tipo se detecta solo por el archivo
+    // elegido en vez de pedir que la persona lo aclare a mano.
+    const kind: "photo" | "video" = file.type.startsWith("video/") ? "video" : "photo";
+
     if (demoMode) {
       const url = URL.createObjectURL(file);
       setMedia((list) => [
         ...list,
         {
           id: `local-${Date.now()}`,
-          type: "photo",
+          type: kind,
           url,
           caption: null,
           width: null,
@@ -96,16 +101,16 @@ export function ManagePet({ petId, initialPet, initialVaccinations, demoMode = f
     const res = await fetch("/api/media/upload-url", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ petId, contentType: file.type, kind: "photo" }),
+      body: JSON.stringify({ petId, contentType: file.type, kind }),
     });
-    if (!res.ok) return flash("No se pudo subir la foto");
+    if (!res.ok) return flash(kind === "video" ? "No se pudo subir el video" : "No se pudo subir la foto");
     const { uploadUrl, mediaId, readUrl } = await res.json();
     await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
     setMedia((list) => [
       ...list,
       {
         id: mediaId,
-        type: "photo",
+        type: kind,
         url: readUrl,
         caption: null,
         width: null,
@@ -114,7 +119,7 @@ export function ManagePet({ petId, initialPet, initialVaccinations, demoMode = f
         orderIndex: list.length,
       },
     ]);
-    flash("Foto subida — la miniatura se procesa en unos segundos");
+    flash(kind === "video" ? "Video subido" : "Foto subida — la miniatura se procesa en unos segundos");
   }
 
   async function addVaccination(name: string, appliedAt: string, nextDueAt: string) {
@@ -156,13 +161,20 @@ export function ManagePet({ petId, initialPet, initialVaccinations, demoMode = f
       <h1 className={styles.title}>Gestionar a {pet.name}</h1>
       {savedFlash && <div className={styles.flash}>{savedFlash}</div>}
 
-      {/* ── Fotos ── */}
+      {/* ── Fotos y videos ── */}
       <section className={`${styles.section} glass`}>
-        <h2 className={styles.sectionTitle}>Fotos</h2>
+        <h2 className={styles.sectionTitle}>Fotos y videos</h2>
+        <p className={styles.hint}>
+          La portada del panel puede ser una foto o un video (se reproduce sin sonido). Elegí cuál con la estrella.
+        </p>
         <div className={styles.photoGrid}>
           {media.map((m) => (
             <div key={m.id} className={styles.photoCard}>
-              <img src={m.url} alt="" />
+              {m.type === "video" ? (
+                <video src={m.url} muted loop autoPlay playsInline />
+              ) : (
+                <img src={m.url} alt="" />
+              )}
               {m.isProfileHero && <span className={styles.heroTag}>Portada</span>}
               <div className={styles.photoActions}>
                 {!m.isProfileHero && (
@@ -177,14 +189,14 @@ export function ManagePet({ petId, initialPet, initialVaccinations, demoMode = f
             </div>
           ))}
           <label className={styles.addPhoto}>
-            + Agregar foto
+            + Agregar foto o video
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,video/*"
               hidden
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) addPhotoFromFile(file);
+                if (file) addMediaFromFile(file);
                 e.target.value = "";
               }}
             />

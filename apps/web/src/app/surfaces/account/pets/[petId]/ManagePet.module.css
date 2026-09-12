@@ -77,7 +77,8 @@
   background: var(--glass-bg);
 }
 
-.photoCard img {
+.photoCard img,
+.photoCard video {
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;

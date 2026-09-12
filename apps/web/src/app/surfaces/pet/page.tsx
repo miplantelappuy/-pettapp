@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { eq, and, isNull } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
 import { getPetHomeData } from "@/lib/pets-data";
+import { getVaccinations } from "@/lib/vaccinations-data";
 import { getSurfacePrefix } from "@/lib/surface-prefix";
 import { hasPetAccess } from "@/lib/pin";
 import { OwnerHome } from "./OwnerHome";
@@ -38,6 +39,15 @@ export default async function PetHomePage() {
   });
   const giftsCount = pendingGifts.length;
 
+  // Solo lo mínimo para el resumen en el Home (cuántas hay + la próxima
+  // fecha si hay alguna cargada) — el detalle completo (agregar/borrar) vive
+  // en Gestionar, esto es nada más una vidriera que invita a entrar ahí.
+  const vaccinations = await getVaccinations(pet.id);
+  const nextVaccineDue = vaccinations
+    .map((v) => v.nextDueAt)
+    .filter((d): d is string => Boolean(d))
+    .sort()[0] ?? null;
+
   return (
     <OwnerHome
       pet={pet}
@@ -45,6 +55,8 @@ export default async function PetHomePage() {
       manageHref={`${prefix}/gestionar`}
       giftsHref={`${prefix}/regalos`}
       giftsCount={giftsCount}
+      vaccinationsCount={vaccinations.length}
+      nextVaccineDue={nextVaccineDue}
     />
   );
 }

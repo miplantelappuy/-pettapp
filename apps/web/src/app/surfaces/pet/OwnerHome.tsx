@@ -17,6 +17,8 @@ interface Props {
   manageHref?: string;
   giftsCount?: number;
   giftsHref?: string;
+  vaccinationsCount?: number;
+  nextVaccineDue?: string | null;
 }
 
 // Home del panel de dueño, versión glassmorphism: una foto/video a pantalla
@@ -25,7 +27,15 @@ interface Props {
 // información configurable. Una sola composición responsive (no una versión
 // de celular y otra de PC): en pantallas grandes el hero y las secciones
 // simplemente respiran con más aire, no cambia la estructura.
-export function OwnerHome({ pet, albumHref = "/recuerdos", manageHref = "/gestionar", giftsCount = 0, giftsHref = "/regalos" }: Props) {
+export function OwnerHome({
+  pet,
+  albumHref = "/recuerdos",
+  manageHref = "/gestionar",
+  giftsCount = 0,
+  giftsHref = "/regalos",
+  vaccinationsCount = 0,
+  nextVaccineDue = null,
+}: Props) {
   const speciesLabel = SPECIES_LABEL[pet.species] ?? "compañero";
   const heroIsVideo = pet.heroMedia?.type === "video";
 
@@ -120,8 +130,25 @@ export function OwnerHome({ pet, albumHref = "/recuerdos", manageHref = "/gestio
       </Reveal>
 
       <Reveal>
+        <section className={`${styles.section} ${styles.panel} glass`}>
+          <span className={styles.eyebrow}>Vacunas</span>
+          <h2 className={styles.panelTitle}>
+            {vaccinationsCount > 0
+              ? `${vaccinationsCount} ${vaccinationsCount === 1 ? "vacuna cargada" : "vacunas cargadas"}`
+              : "Todavía no cargaste vacunas"}
+          </h2>
+          <p className={styles.panelText}>
+            {nextVaccineDue ? `Próxima: ${nextVaccineDue}.` : `El historial completo se carga desde Gestionar.`}
+          </p>
+          <Link href={manageHref} className={styles.panelLink}>
+            Ver vacunas →
+          </Link>
+        </section>
+      </Reveal>
+
+      <Reveal>
         <section className={`${styles.section} ${styles.comingSoonRow}`}>
-          {["Salud", "Crecimiento", "Vacunas"].map((label) => (
+          {["Salud", "Crecimiento"].map((label) => (
             <div key={label} className={`${styles.comingSoonTile} glass`}>
               <span className={styles.tileTitle}>{label}</span>
               <span className={styles.soonTag}>pronto</span>
