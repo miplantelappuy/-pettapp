@@ -11,12 +11,12 @@ interface PatchBody {
 
 async function loadMediaAndCheckOwnership(request: NextRequest, mediaId: string) {
   const media = await db.query.petMedia.findFirst({ where: eq(schema.petMedia.id, mediaId) });
-  if (!media) return { error: "Foto no encontrada", status: 404 as const };
+  if (!media) return { ok: false as const, error: "Foto no encontrada", status: 404 as const };
 
   const check = await assertPetOwnership(request, media.petId);
-  if ("error" in check) return check;
+  if (!check.ok) return check;
 
-  return { media };
+  return { ok: true as const, media };
 }
 
 // PATCH /api/pets/media/:mediaId — marcar como foto principal (hero), editar
@@ -24,7 +24,7 @@ async function loadMediaAndCheckOwnership(request: NextRequest, mediaId: string)
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ mediaId: string }> }) {
   const { mediaId } = await params;
   const result = await loadMediaAndCheckOwnership(request, mediaId);
-  if ("error" in result) return NextResponse.json({ error: result.error }, { status: result.status });
+  if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
 
   const body = (await request.json()) as PatchBody;
 
@@ -57,7 +57,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ mediaId: string }> }) {
   const { mediaId } = await params;
   const result = await loadMediaAndCheckOwnership(request, mediaId);
-  if ("error" in result) return NextResponse.json({ error: result.error }, { status: result.status });
+  if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
 
   await db.delete(schema.petMedia).where(eq(schema.petMedia.id, mediaId));
   return NextResponse.json({ ok: true });
