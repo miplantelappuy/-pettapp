@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { resolveHost } from "./src/lib/host.js";
-import { BASE_DOMAIN } from "./src/lib/env";
+import { resolveHost } from "./lib/host.js";
+import { BASE_DOMAIN } from "./lib/env";
 
 // Este middleware es la única pieza que decide, por request, cuál de las 3
 // superficies corresponde (root / account / emergency / pet) y reescribe la
@@ -11,13 +11,7 @@ export function middleware(request: NextRequest) {
   const resolved = resolveHost(hostHeader, BASE_DOMAIN);
 
   if (!resolved) {
-          // DEBUG TEMPORAL (status 200 a propósito, para poder leer el cuerpo con
-    // herramientas que no muestran el body en respuestas de error). Sacar
-    // apenas confirmemos la causa — el 404 real vuelve después.
-    return new NextResponse(
-      `DEBUG host="${hostHeader}" base="${BASE_DOMAIN}"`,
-      { status: 200 },
-    );
+    return new NextResponse("Dominio no reconocido", { status: 404 });
   }
 
   const url = request.nextUrl.clone();
