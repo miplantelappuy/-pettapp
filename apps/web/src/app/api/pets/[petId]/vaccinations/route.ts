@@ -14,7 +14,7 @@ interface Body {
 export async function GET(request: NextRequest, { params }: { params: Promise<{ petId: string }> }) {
   const { petId } = await params;
   const check = await assertPetOwnership(request, petId);
-  if ("error" in check) return NextResponse.json({ error: check.error }, { status: check.status });
+  if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
 
   const rows = await db.query.vaccinations.findMany({
     where: eq(schema.vaccinations.petId, petId),
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ petId: string }> }) {
   const { petId } = await params;
   const check = await assertPetOwnership(request, petId);
-  if ("error" in check) return NextResponse.json({ error: check.error }, { status: check.status });
+  if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
 
   const body = (await request.json()) as Body;
   if (!body?.name || !body?.appliedAt) {
