@@ -54,7 +54,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   try {
     if (isVideo) {
-      const compressed = await compressVideo(buffer);
+      const { video: compressed } = await compressVideo(buffer);
       key = `pets/${petId}/milestones/${id}.mp4`;
       await storage.putObject(key, compressed, "video/mp4");
       mediaType = "video";

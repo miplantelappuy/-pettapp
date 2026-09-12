@@ -4,8 +4,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 1.1rem;
   padding: 3rem 1rem;
-  perspective: 2200px;
 }
 
 .empty {
@@ -15,40 +15,45 @@
   padding: 4rem 1rem;
 }
 
-.book {
+.bookWrap {
   width: min(92vw, 640px);
   aspect-ratio: 4 / 3;
-  transform-style: preserve-3d;
-  position: relative;
 }
 
-/* Tapa cerrada: un objeto de verdad, no una card de vidrio — lino cálido en
-   vez del gradiente violeta/coral del resto de la app (esta pantalla es la
-   excepción declarada en globals.css). El sello y el filete de bronce son
-   los mismos detalles que después reaparecen adentro (folio, marcos de las
-   fotos) — el álbum tiene su propio lenguaje consistente de tapa a tapa. */
-.cover {
+/* react-pageflip pinta su propia estructura interna (sombras, doblez, etc.)
+   adentro de este contenedor — acá solo le damos sombra de "objeto sobre la
+   mesa" al conjunto. */
+.book {
+  box-shadow: 0 30px 70px rgba(20, 14, 6, 0.4);
+}
+
+/* Contenido de cada página — tapa/contratapa y hoja interior comparten el
+   mismo tamaño (lo maneja react-pageflip), solo cambia el fondo. */
+.coverPage,
+.leafPage {
   width: 100%;
   height: 100%;
-  border: 1px solid rgba(184, 130, 61, 0.5);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  background:
-    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.12), transparent 55%),
-    repeating-linear-gradient(115deg, rgba(0, 0, 0, 0.05) 0px, rgba(0, 0, 0, 0.05) 1px, transparent 1px, transparent 5px),
-    linear-gradient(155deg, #4a3420 0%, #2b2013 65%, #1c1409 100%);
-  box-shadow: 0 30px 70px rgba(20, 14, 6, 0.45), inset 0 0 0 6px rgba(184, 130, 61, 0.14);
+  overflow: hidden;
+  background: var(--album-paper-light);
+}
+
+/* Tapa: un objeto de verdad, no una card de vidrio — lino cálido en vez del
+   gradiente violeta/coral del resto de la app (esta pantalla es la
+   excepción declarada en globals.css). El sello y el filete de bronce son
+   los mismos detalles que reaparecen adentro (folio, marcos de las fotos)
+   — el álbum tiene su propio lenguaje consistente de tapa a tapa. */
+.coverPage {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
   padding: 2rem;
-  transition: transform 0.3s ease;
-}
-
-.cover:hover {
-  transform: translateY(-4px);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.12), transparent 55%),
+    repeating-linear-gradient(115deg, rgba(0, 0, 0, 0.05) 0px, rgba(0, 0, 0, 0.05) 1px, transparent 1px, transparent 5px),
+    linear-gradient(155deg, #4a3420 0%, #2b2013 65%, #1c1409 100%);
+  border: 1px solid rgba(184, 130, 61, 0.5);
 }
 
 .coverSeal {
@@ -61,9 +66,10 @@
   font-family: var(--font-album-display);
   font-style: italic;
   font-weight: 600;
-  font-size: clamp(2.4rem, 9vw, 4.2rem);
+  font-size: clamp(2.1rem, 8vw, 3.6rem);
   color: #f7ecd8;
   line-height: 1;
+  text-align: center;
 }
 
 .coverRule {
@@ -76,58 +82,20 @@
 .coverSubtitle {
   font-family: var(--font-album-display);
   font-style: italic;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: rgba(247, 236, 216, 0.75);
+  text-align: center;
 }
 
-.coverHint {
-  margin-top: 1.4rem;
+.dragHint {
   font-family: var(--font-body);
-  font-size: 0.7rem;
-  color: rgba(247, 236, 216, 0.5);
-}
-
-.interior {
-  width: 100%;
-  height: 100%;
-  background: var(--album-paper-light);
-  border-radius: var(--radius-md);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
-  overflow: hidden;
-  position: relative;
-}
-
-/* Sombra sutil al centro, como el lomo/pliegue de un libro abierto de verdad. */
-.spine {
-  position: absolute;
-  inset: 0 0 0 50%;
-  width: 3rem;
-  margin-left: -1.5rem;
-  background: linear-gradient(90deg, transparent, rgba(43, 32, 19, 0.1) 50%, transparent);
-  pointer-events: none;
-  z-index: 5;
-}
-
-.leaf {
-  width: 100%;
-  height: 100%;
-  transform-origin: left center;
-  backface-visibility: hidden;
-  transition: transform 0.38s ease, opacity 0.38s ease;
-}
-
-.leafTurnNext {
-  transform: rotateY(-8deg);
-  opacity: 0.4;
-}
-
-.leafTurnPrev {
-  transform: rotateY(8deg);
-  opacity: 0.4;
+  font-size: 0.75rem;
+  color: var(--color-cloud-dim);
+  text-align: center;
+  margin: 0;
 }
 
 .controls {
-  margin-top: 1.5rem;
   display: flex;
   align-items: center;
   gap: 1.25rem;

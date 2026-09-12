@@ -65,7 +65,8 @@
   opacity: 0.65;
 }
 
-.print img {
+.print img,
+.print video {
   display: block;
   width: 100%;
   height: auto;

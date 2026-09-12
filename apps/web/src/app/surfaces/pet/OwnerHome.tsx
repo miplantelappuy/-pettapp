@@ -52,9 +52,14 @@ export function OwnerHome({
       <section className={styles.hero}>
         {pet.heroMedia?.url ? (
           heroIsVideo ? (
+            // El poster (un JPG liviano, ver lib/video-compress.ts) se ve al
+            // instante mientras el video de verdad todavía carga de fondo —
+            // así nunca se siente "vacío" antes de que aparezca.
             <video
               className={styles.heroMedia}
               src={pet.heroMedia.url}
+              poster={pet.heroMedia.posterUrl ?? undefined}
+              preload="auto"
               autoPlay
               muted
               loop

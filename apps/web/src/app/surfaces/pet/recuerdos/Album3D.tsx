@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { forwardRef, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import HTMLFlipBook from "./FlipBook";
 import type { Spread } from "./album-styles/types";
 import styles from "./Album3D.module.css";
 
@@ -11,29 +12,52 @@ interface Props {
   renderSpread: (spread: Spread, index: number) => ReactNode;
 }
 
-// Mecanismo físico del álbum: tapa, grosor, perspectiva 3D, animación de
-// pasar página, controles. A propósito NO sabe nada sobre cómo se ve el
-// contenido interior de cada página — eso lo decide el estilo elegido, vía
-// `renderSpread`. Así, cambiar de estilo visual nunca requiere tocar este
-// archivo. Implementado en CSS puro (perspective + rotateY) para no sumar
-// ninguna librería de animación nueva.
+// Cada página que le pasamos a HTMLFlipBook necesita reenviar su ref a un
+// nodo del DOM real — así es como react-pageflip mide y dobla la página de
+// verdad (no es un adorno nuestro, es lo que pide su propia documentación).
+const CoverPage = forwardRef<HTMLDivElement, { petName: string }>(function CoverPage({ petName }, ref) {
+  return (
+    <div className={styles.coverPage} ref={ref}>
+      <span className={styles.coverSeal} aria-hidden>
+        🐾
+      </span>
+      <span className={styles.coverTitle}>{petName}</span>
+      <span className={styles.coverRule} aria-hidden />
+      <span className={styles.coverSubtitle}>un álbum de recuerdos</span>
+    </div>
+  );
+});
+
+const BackCoverPage = forwardRef<HTMLDivElement, Record<string, never>>(function BackCoverPage(_props, ref) {
+  return (
+    <div className={styles.coverPage} ref={ref}>
+      <span className={styles.coverSeal} aria-hidden>
+        🐾
+      </span>
+    </div>
+  );
+});
+
+const LeafPage = forwardRef<HTMLDivElement, { children: ReactNode }>(function LeafPage({ children }, ref) {
+  return (
+    <div className={styles.leafPage} ref={ref}>
+      {children}
+    </div>
+  );
+});
+
+// Mecanismo físico del álbum: tapa, lomo, y ahora el paso de página de
+// verdad — react-pageflip simula el papel doblándose y responde a
+// arrastrar con el dedo (o el mouse) desde una esquina, como una figurita
+// de Panini virtual, en vez del giro simulado con CSS que había antes. A
+// propósito NO sabe nada sobre cómo se ve el contenido interior de cada
+// página — eso lo decide el estilo elegido, vía `renderSpread`.
 export function Album3D({ petName, spreads, renderSpread }: Props) {
-  const [isOpen, setIsOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ver FlipBook.js: sin tipos a propósito
+  const bookRef = useRef<any>(null);
   const [current, setCurrent] = useState(0);
-  const [turning, setTurning] = useState<"next" | "prev" | null>(null);
 
-  const total = spreads.length;
-
-  function goTo(index: number, direction: "next" | "prev") {
-    if (index < 0 || index >= total || turning) return;
-    setTurning(direction);
-    window.setTimeout(() => {
-      setCurrent(index);
-      setTurning(null);
-    }, 380);
-  }
-
-  if (total === 0) {
+  if (spreads.length === 0) {
     return (
       <div className={styles.empty}>
         <p>Todavía no hay recuerdos guardados de {petName}.</p>
@@ -41,63 +65,68 @@ export function Album3D({ petName, spreads, renderSpread }: Props) {
     );
   }
 
+  const totalPages = spreads.length + 2; // + tapa + contratapa
+
+  function flip(direction: "next" | "prev") {
+    const pageFlip = bookRef.current?.pageFlip?.();
+    if (!pageFlip) return;
+    if (direction === "next") pageFlip.flipNext();
+    else pageFlip.flipPrev();
+  }
+
   return (
     <div className={styles.stage}>
-      <div className={`${styles.book} ${isOpen ? styles.bookOpen : ""}`}>
-        {!isOpen ? (
-          <button
-            type="button"
-            className={styles.cover}
-            onClick={() => setIsOpen(true)}
-            aria-label={`Abrir el álbum de ${petName}`}
-          >
-            <span className={styles.coverSeal} aria-hidden>
-              🐾
-            </span>
-            <span className={styles.coverTitle}>{petName}</span>
-            <span className={styles.coverRule} aria-hidden />
-            <span className={styles.coverSubtitle}>un álbum de recuerdos</span>
-            <span className={styles.coverHint}>Tocá para abrir</span>
-          </button>
-        ) : (
-          <div className={styles.interior}>
-            <span className={styles.spine} aria-hidden />
-            <div
-              className={`${styles.leaf} ${turning === "next" ? styles.leafTurnNext : ""} ${
-                turning === "prev" ? styles.leafTurnPrev : ""
-              }`}
-            >
-              {renderSpread(spreads[current], current)}
-            </div>
-          </div>
-        )}
+      {/* El ancho concreto vive en este div (no confiamos en que "stretch"
+          adivine un tamaño sin un contenedor con medida propia) — el libro
+          se estira para llenarlo, dentro de los límites min/max de abajo. */}
+      <div className={styles.bookWrap}>
+        <HTMLFlipBook
+          ref={bookRef}
+          width={360}
+          height={480}
+          size="stretch"
+          minWidth={260}
+          maxWidth={640}
+          minHeight={340}
+          maxHeight={860}
+          showCover
+          flippingTime={650}
+          className={styles.book}
+          onFlip={(e: { data: number }) => setCurrent(e.data)}
+        >
+          <CoverPage petName={petName} />
+          {spreads.map((spread, i) => (
+            <LeafPage key={spread.id}>{renderSpread(spread, i)}</LeafPage>
+          ))}
+          <BackCoverPage />
+        </HTMLFlipBook>
       </div>
 
-      {isOpen && (
-        <div className={styles.controls}>
-          <button
-            type="button"
-            onClick={() => goTo(current - 1, "prev")}
-            disabled={current === 0}
-            className={styles.controlButton}
-            aria-label="Página anterior"
-          >
-            ‹
-          </button>
-          <span className={styles.pageCount}>
-            Capítulo {current + 1} de {total}
-          </span>
-          <button
-            type="button"
-            onClick={() => goTo(current + 1, "next")}
-            disabled={current === total - 1}
-            className={styles.controlButton}
-            aria-label="Página siguiente"
-          >
-            ›
-          </button>
-        </div>
-      )}
+      <p className={styles.dragHint}>Agarrá una esquina y deslizá para pasar de página.</p>
+
+      <div className={styles.controls}>
+        <button
+          type="button"
+          onClick={() => flip("prev")}
+          disabled={current === 0}
+          className={styles.controlButton}
+          aria-label="Página anterior"
+        >
+          ‹
+        </button>
+        <span className={styles.pageCount}>
+          Página {current + 1} de {totalPages}
+        </span>
+        <button
+          type="button"
+          onClick={() => flip("next")}
+          disabled={current >= totalPages - 1}
+          className={styles.controlButton}
+          aria-label="Página siguiente"
+        >
+          ›
+        </button>
+      </div>
     </div>
   );
 }

@@ -26,7 +26,7 @@ export default function PreviewEmergencyPage() {
 
       <main className={styles.page}>
         <div className={styles.heroWrap}>
-          <img src={pet.heroMedia?.url} alt={pet.name} className={styles.photo} />
+          <img src={pet.emergencyPhotoUrl ?? undefined} alt={pet.name} className={styles.photo} />
           <div className={styles.heroScrim} />
         </div>
 

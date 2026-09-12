@@ -16,6 +16,7 @@
     "@aws-sdk/client-s3": "^3.679.0",
     "@aws-sdk/s3-request-presigner": "^3.679.0",
     "ffmpeg-static": "^5.2.0",
+    "react-pageflip": "^2.0.3",
     "web-push": "^3.6.7",
     "qrcode": "^1.5.4",
     "@pettapp/db": "*",

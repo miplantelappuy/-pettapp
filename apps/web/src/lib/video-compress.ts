@@ -24,7 +24,16 @@ export interface CompressVideoOptions {
   maxWidth?: number;
 }
 
-export async function compressVideo(input: Buffer, options: CompressVideoOptions = {}): Promise<Buffer> {
+export interface CompressVideoResult {
+  video: Buffer;
+  /** Un frame fijo del video ya comprimido, como imagen JPG — se usa como
+   * atributo `poster` del <video>: se ve al instante (pesa nada comparado
+   * con el video) mientras el video de verdad todavía está cargando de
+   * fondo, en vez de sentirse "vacío" hasta que termine de bajar. */
+  poster: Buffer;
+}
+
+export async function compressVideo(input: Buffer, options: CompressVideoOptions = {}): Promise<CompressVideoResult> {
   if (!ffmpegPath) {
     // No debería pasar en producción (Railway corre Linux x64, para el que
     // ffmpeg-static sí trae binario) — cubierto igual para no romper con un
@@ -38,6 +47,7 @@ export async function compressVideo(input: Buffer, options: CompressVideoOptions
   const workDir = await mkdtemp(join(tmpdir(), "pettapp-video-"));
   const inputPath = join(workDir, "input");
   const outputPath = join(workDir, "output.mp4");
+  const posterPath = join(workDir, "poster.jpg");
 
   try {
     await writeFile(inputPath, input);
@@ -81,7 +91,16 @@ export async function compressVideo(input: Buffer, options: CompressVideoOptions
       { timeout: 150_000 },
     );
 
-    return await readFile(outputPath);
+    // El poster se saca del archivo YA comprimido (no del original) — es un
+    // segundo paso de ffmpeg pero rapidísimo porque el input acá es chico.
+    await execFileAsync(
+      ffmpegPath,
+      ["-y", "-i", outputPath, "-frames:v", "1", "-q:v", "4", posterPath],
+      { timeout: 20_000 },
+    );
+
+    const [video, poster] = await Promise.all([readFile(outputPath), readFile(posterPath)]);
+    return { video, poster };
   } finally {
     await rm(workDir, { recursive: true, force: true });
   }

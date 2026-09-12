@@ -85,15 +85,19 @@ export function ManagePet({
     }
   }
 
-  async function setHero(mediaId: string) {
-    setMedia((list) => list.map((m) => ({ ...m, isProfileHero: m.id === mediaId })));
-    if (demoMode) return flash("Portada actualizada (vista previa)");
-    await fetch(`/api/pets/media/${mediaId}`, {
+  // La portada del Home ya no se elige a mano — ahora rota sola entre todas
+  // las fotos y videos cada vez que se entra a la app (ver lib/pets-data.ts).
+  // Lo que SÍ elige el dueño es la foto del perfil de emergencia (siempre
+  // una foto, nunca un video — esa pantalla tiene que verse siempre).
+  async function setEmergencyPhoto(mediaId: string) {
+    setPet((p) => ({ ...p, emergencyPhotoMediaId: mediaId }) as PetHomeData);
+    if (demoMode) return flash("Foto de emergencia actualizada (vista previa)");
+    await fetch(`/api/pets/${petId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isProfileHero: true }),
+      body: JSON.stringify({ emergencyPhotoMediaId: mediaId }),
     });
-    flash("Portada actualizada");
+    flash("Foto de emergencia actualizada");
   }
 
   async function removePhoto(mediaId: string) {
@@ -116,6 +120,7 @@ export function ManagePet({
           id: `local-${Date.now()}`,
           type: kind,
           url,
+          posterUrl: null,
           caption: null,
           width: null,
           height: null,
@@ -149,6 +154,7 @@ export function ManagePet({
             id: body.mediaId,
             type: "video",
             url: body.readUrl,
+            posterUrl: body.posterUrl ?? null,
             caption: null,
             width: null,
             height: null,
@@ -177,6 +183,7 @@ export function ManagePet({
         id: mediaId,
         type: kind,
         url: readUrl,
+        posterUrl: null,
         caption: null,
         width: null,
         height: null,
@@ -272,22 +279,24 @@ export function ManagePet({
       <section className={`${styles.section} glass`}>
         <h2 className={styles.sectionTitle}>Fotos y videos</h2>
         <p className={styles.hint}>
-          La portada del panel puede ser una foto o un video (se reproduce sin sonido, se recorta a los primeros 20
-          segundos y se comprime automáticamente para que cargue rápido). Elegí cuál con la estrella.
+          La portada del Home puede ser una foto o un video (se reproduce sin sonido, se recorta a los primeros 20
+          segundos y se comprime automáticamente para que cargue rápido) — ya no se elige a mano: rota sola entre
+          todo lo que cargues, así el Home nunca se siente igual dos veces. Los videos acá abajo no se reproducen
+          solos (para no enlentecer la app a medida que sumes más) — tocalos para verlos.
         </p>
         <div className={styles.photoGrid}>
           {media.map((m) => (
             <div key={m.id} className={styles.photoCard}>
               {m.type === "video" ? (
-                <video src={m.url} muted loop autoPlay playsInline />
+                <video src={m.url} poster={m.posterUrl ?? undefined} muted playsInline controls preload="none" />
               ) : (
                 <img src={m.url} alt="" />
               )}
-              {m.isProfileHero && <span className={styles.heroTag}>Portada</span>}
+              {pet.emergencyPhotoMediaId === m.id && <span className={styles.heroTag}>🚨 Emergencia</span>}
               <div className={styles.photoActions}>
-                {!m.isProfileHero && (
-                  <button type="button" onClick={() => setHero(m.id)}>
-                    ★ Portada
+                {m.type === "photo" && pet.emergencyPhotoMediaId !== m.id && (
+                  <button type="button" onClick={() => setEmergencyPhoto(m.id)}>
+                    🚨 Emergencia
                   </button>
                 )}
                 <button type="button" onClick={() => removePhoto(m.id)}>
@@ -339,7 +348,11 @@ export function ManagePet({
       {/* ── Contacto de emergencia ── */}
       <section className={`${styles.section} glass`}>
         <h2 className={styles.sectionTitle}>Contacto de emergencia</h2>
-        <p className={styles.hint}>Esto es lo que ve quien escanea la chapita física de {pet.name}.</p>
+        <p className={styles.hint}>
+          Esto es lo que ve quien escanea la chapita física de {pet.name} — junto con la foto marcada como 🚨
+          Emergencia arriba en &quot;Fotos y videos&quot; (siempre una foto, nunca un video, para que esa pantalla se
+          vea siempre igual de rápido).
+        </p>
         <EmergencyContactForm
           name={pet.emergencyContactName ?? ""}
           phone={pet.emergencyContactPhone ?? ""}

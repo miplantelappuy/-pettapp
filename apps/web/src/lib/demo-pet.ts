@@ -18,6 +18,7 @@ function demoMedia(): ResolvedMedia[] {
     id: `demo-${id}`,
     type: "photo" as const,
     url: `https://placedog.net/1200/900?id=${id}`,
+    posterUrl: null,
     caption: index === 0 ? "Milo, un domingo cualquiera" : null,
     width: 1200,
     height: 900,
@@ -39,6 +40,8 @@ export function getDemoPetHomeData(): PetHomeData {
     templateId: "moderno-cinematografico",
     emergencyContactName: "Facundo",
     emergencyContactPhone: "+59899123456",
+    emergencyPhotoMediaId: media[0].id,
+    emergencyPhotoUrl: media[0].url,
     heroMedia: media[0],
     media,
   };

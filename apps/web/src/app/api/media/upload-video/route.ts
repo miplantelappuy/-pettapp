@@ -43,21 +43,26 @@ export async function POST(request: NextRequest) {
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
-    const compressed = await compressVideo(buffer);
+    const { video: compressed, poster } = await compressVideo(buffer);
 
     const key = `pets/${petId}/${mediaId}.mp4`;
+    const posterKey = `pets/${petId}/${mediaId}-poster.jpg`;
     const storage = getStorage();
-    await storage.putObject(key, compressed, "video/mp4");
-    const readUrl = await storage.getReadUrl(key);
+    await Promise.all([
+      storage.putObject(key, compressed, "video/mp4"),
+      storage.putObject(posterKey, poster, "image/jpeg"),
+    ]);
+    const [readUrl, posterUrl] = await Promise.all([storage.getReadUrl(key), storage.getReadUrl(posterKey)]);
 
     await db.insert(schema.petMedia).values({
       id: mediaId,
       petId,
       type: "video",
       storageKey: key,
+      posterKey,
     });
 
-    return NextResponse.json({ mediaId, key, readUrl }, { status: 201 });
+    return NextResponse.json({ mediaId, key, readUrl, posterUrl }, { status: 201 });
   } catch (err) {
     console.error("[upload-video] fallo al comprimir/subir:", err);
     return NextResponse.json({ error: "No se pudo procesar ese video. Probá con otro archivo." }, { status: 500 });

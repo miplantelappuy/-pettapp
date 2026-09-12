@@ -22,34 +22,36 @@ function tiltFor(id: string): number {
 }
 
 function generateSpreads(media: ResolvedMedia[]): Spread[] {
-  const photos = media.filter((m) => m.type === "photo");
-  if (photos.length === 0) return [];
+  // El álbum ahora también muestra videos (antes solo fotos) — cada uno se
+  // reproduce solo apenas se llega a su página (ver Print más abajo).
+  const items = media;
+  if (items.length === 0) return [];
 
   const spreads: Spread[] = [];
   let i = 0;
   let cursor = 0;
 
-  while (cursor < photos.length) {
+  while (cursor < items.length) {
     const pattern = i % 3; // full, collage-2, collage-3 — repite
     if (pattern === 0) {
-      spreads.push({ id: `spread-${i}`, layout: "full", items: [photos[cursor]] });
+      spreads.push({ id: `spread-${i}`, layout: "full", items: [items[cursor]] });
       cursor += 1;
-    } else if (pattern === 1 && photos.length - cursor >= 2) {
+    } else if (pattern === 1 && items.length - cursor >= 2) {
       spreads.push({
         id: `spread-${i}`,
         layout: "collage-2",
-        items: [photos[cursor], photos[cursor + 1]],
+        items: [items[cursor], items[cursor + 1]],
       });
       cursor += 2;
-    } else if (photos.length - cursor >= 3) {
+    } else if (items.length - cursor >= 3) {
       spreads.push({
         id: `spread-${i}`,
         layout: "collage-3",
-        items: [photos[cursor], photos[cursor + 1], photos[cursor + 2]],
+        items: [items[cursor], items[cursor + 1], items[cursor + 2]],
       });
       cursor += 3;
     } else {
-      spreads.push({ id: `spread-${i}`, layout: "full", items: [photos[cursor]] });
+      spreads.push({ id: `spread-${i}`, layout: "full", items: [items[cursor]] });
       cursor += 1;
     }
     i += 1;
@@ -66,7 +68,14 @@ function generateSpreads(media: ResolvedMedia[]): Spread[] {
 function Print({ item, tilt, big = false }: { item: ResolvedMedia; tilt: number; big?: boolean }) {
   return (
     <div className={`${styles.print} ${big ? styles.printBig : ""}`} style={{ ["--tilt" as string]: `${tilt}deg` }}>
-      <img src={item.url} alt={item.caption ?? ""} />
+      {item.type === "video" ? (
+        // Se reproduce solo apenas la página está a la vista — react-pageflip
+        // solo monta la página actual, así que nunca hay más de un puñado de
+        // estos activos al mismo tiempo.
+        <video src={item.url} poster={item.posterUrl ?? undefined} muted loop autoPlay playsInline />
+      ) : (
+        <img src={item.url} alt={item.caption ?? ""} />
+      )}
     </div>
   );
 }

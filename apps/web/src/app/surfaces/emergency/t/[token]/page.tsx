@@ -49,7 +49,10 @@ export default async function EmergencyPage({ params }: { params: Promise<{ toke
   // perfil; lost_mode solo agrega el aviso de que la familia ya sabe que
   // está perdido/a y está buscando activamente.
   const petData = pet ? await getPetHomeData(pet.slug) : null;
-  const heroUrl = petData?.heroMedia?.url ?? null;
+  // Siempre la foto elegida a mano por el dueño (o su fallback a la primera
+  // foto disponible) — nunca la portada del Home, que ahora rota sola y
+  // puede tocarle un video: esta pantalla tiene que verse siempre.
+  const heroUrl = petData?.emergencyPhotoUrl ?? null;
   const isLost = view.view === "lost_mode";
 
   return (

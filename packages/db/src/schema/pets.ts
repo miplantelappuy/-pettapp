@@ -31,6 +31,13 @@ export const pets = pgTable("pets", {
   // afectar su teléfono de cuenta.
   emergencyContactName: text("emergency_contact_name"),
   emergencyContactPhone: text("emergency_contact_phone"),
+  // Qué FOTO (nunca un video — el perfil de emergencia necesita algo que se
+  // vea siempre, sin depender de que un video cargue) se muestra en
+  // tag.BASE_DOMAIN/t/<token>. Elegida a mano por el dueño entre sus fotos
+  // ya cargadas — separada a propósito de cuál es la portada del Home
+  // (que ahora rota sola y puede tocarle un video). null hasta que el dueño
+  // elija una; getPetHomeData cae a la primera foto disponible mientras tanto.
+  emergencyPhotoMediaId: text("emergency_photo_media_id"),
   // FK a pet_media declarada más abajo para evitar dependencia circular en la definición.
   iconMediaId: text("icon_media_id"),
   microchipNumber: text("microchip_number"),
@@ -52,6 +59,11 @@ export const petMedia = pgTable("pet_media", {
   type: text("type").notNull(), // 'photo' | 'video'
   storageKey: text("storage_key").notNull(),
   thumbKey: text("thumb_key"),
+  // Frame fijo (JPG) del video ya comprimido — se manda como atributo
+  // `poster` del <video> para que se vea algo al instante mientras el video
+  // de verdad todavía carga de fondo. null en fotos y en videos subidos
+  // antes de que existiera esto.
+  posterKey: text("poster_key"),
   width: integer("width"),
   height: integer("height"),
   durationS: numeric("duration_s"),

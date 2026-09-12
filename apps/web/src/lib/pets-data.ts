@@ -6,6 +6,10 @@ export interface ResolvedMedia {
   id: string;
   type: "photo" | "video";
   url: string;
+  /** Solo en videos: un frame fijo (JPG) para mostrar al instante como
+   * atributo `poster` mientras el video de verdad carga de fondo. null en
+   * fotos y en videos subidos antes de que existiera esto. */
+  posterUrl: string | null;
   caption: string | null;
   width: number | null;
   height: number | null;
@@ -24,6 +28,13 @@ export interface PetHomeData {
   templateId: string;
   emergencyContactName: string | null;
   emergencyContactPhone: string | null;
+  /** Cuál de las fotos ya cargadas eligió el dueño para el perfil de
+   * emergencia (nunca un video) — null si todavía no eligió ninguna. */
+  emergencyPhotoMediaId: string | null;
+  /** La URL ya resuelta de esa foto — con fallback a la primera foto
+   * disponible si el dueño todavía no eligió una, para que el perfil de
+   * emergencia nunca se vea vacío. null solo si no hay ninguna foto cargada. */
+  emergencyPhotoUrl: string | null;
   heroMedia: ResolvedMedia | null;
   media: ResolvedMedia[];
 }
@@ -46,6 +57,7 @@ export async function getPetHomeData(slug: string): Promise<PetHomeData | null> 
       id: m.id,
       type: m.type as "photo" | "video",
       url: await storage.getReadUrl(m.storageKey),
+      posterUrl: m.posterKey ? await storage.getReadUrl(m.posterKey) : null,
       caption: m.caption,
       width: m.width,
       height: m.height,
@@ -54,7 +66,19 @@ export async function getPetHomeData(slug: string): Promise<PetHomeData | null> 
     })),
   );
 
-  const heroMedia = media.find((m) => m.isProfileHero) ?? media[0] ?? null;
+  // La portada del Home ya NO se elige a mano (ver ManagePet) — rota sola,
+  // una al azar entre TODAS las fotos y videos cada vez que se entra a la
+  // app, para que nunca se sienta "la misma pantalla" dos veces seguidas.
+  const heroMedia = media.length > 0 ? media[Math.floor(Math.random() * media.length)] : null;
+
+  // El perfil de emergencia SÍ necesita algo fijo, elegido por el dueño, y
+  // que sea siempre una foto (nunca puede depender de que un video cargue,
+  // es la pantalla que ve alguien ayudando a una mascota perdida). Si
+  // todavía no eligió ninguna, cae a la primera foto que haya.
+  const chosenEmergencyPhoto = pet.emergencyPhotoMediaId
+    ? media.find((m) => m.id === pet.emergencyPhotoMediaId && m.type === "photo")
+    : undefined;
+  const emergencyPhotoUrl = (chosenEmergencyPhoto ?? media.find((m) => m.type === "photo"))?.url ?? null;
 
   return {
     id: pet.id,
@@ -67,6 +91,8 @@ export async function getPetHomeData(slug: string): Promise<PetHomeData | null> 
     templateId: pet.templateId,
     emergencyContactName: pet.emergencyContactName,
     emergencyContactPhone: pet.emergencyContactPhone,
+    emergencyPhotoMediaId: pet.emergencyPhotoMediaId,
+    emergencyPhotoUrl,
     heroMedia,
     media,
   };
