@@ -26,6 +26,10 @@ interface Props {
 }
 
 const PAWS_PER_SEGMENT = 6;
+// Qué tan "ancho" es el efecto de agrandado al llegar a un nodo, en
+// fracción de progreso total del camino (0 a 1) — más chico = el agrandado
+// dura menos scroll.
+const BUMP_WINDOW = 0.05;
 
 function formatDate(iso: string): string {
   const d = new Date(`${iso}T00:00:00`);
@@ -109,21 +113,10 @@ export function GrowthPath({ petName, species, birthDate, milestones, backHref, 
   // sin importar cuántos hitos haya.
   const points = useMemo(() => nodes.map((_, i) => ({ x: i % 2 === 0 ? 22 : 78, y: i + 0.5 })), [nodes]);
 
-  const pathD = useMemo(() => {
-    if (points.length === 0) return "";
-    let d = `M ${points[0].x} ${points[0].y}`;
-    for (let i = 1; i < points.length; i++) {
-      const prev = points[i - 1];
-      const curr = points[i];
-      const midY = (prev.y + curr.y) / 2;
-      d += ` C ${prev.x} ${midY}, ${curr.x} ${midY}, ${curr.x} ${curr.y}`;
-    }
-    return d;
-  }, [points]);
-
-  // Huellas repartidas a lo largo de cada tramo (misma curva que el trazo
-  // guía), con el ángulo del tramo para que queden "mirando" hacia dónde
-  // avanza el camino en vez de todas paradas derecho.
+  // Huellas repartidas a lo largo de una curva suave entre cada par de
+  // nodos (sin dibujar ninguna línea de fondo — son las huellas mismas las
+  // que muestran el camino), con el ángulo del tramo para que queden
+  // "mirando" hacia dónde avanza en vez de todas paradas derecho.
   const paws = useMemo(() => {
     const list: { key: string; x: number; y: number; angleDeg: number; yFraction: number; side: number }[] = [];
     for (let i = 1; i < points.length; i++) {
@@ -205,10 +198,6 @@ export function GrowthPath({ petName, species, birthDate, milestones, backHref, 
         </div>
       ) : (
         <div ref={containerRef} className={styles.path} style={{ height: `${nodes.length * 16}rem` }}>
-          <svg className={styles.pathSvg} viewBox={`0 0 100 ${nodes.length}`} preserveAspectRatio="none" aria-hidden>
-            <path d={pathD} className={styles.pathTrack} />
-          </svg>
-
           {paws.map((paw) => {
             const revealed = progress >= paw.yFraction - 0.015;
             const style = {
@@ -229,11 +218,23 @@ export function GrowthPath({ petName, species, birthDate, milestones, backHref, 
           {nodes.map((node, i) => {
             const yFraction = (i + 0.5) / nodes.length;
             const revealed = progress >= yFraction - 0.04;
+            // Cuando el scroll "llega" a este punto del camino, la burbuja
+            // se agranda un poco y vuelve a su tamaño normal al seguir
+            // scrolleando — cuanto más cerca está el progreso de este nodo,
+            // más grande, con una caída suave a los costados en vez de un
+            // salto brusco.
+            const distanceToNode = Math.abs(progress - yFraction);
+            const arrivalBump = Math.max(0, 1 - distanceToNode / BUMP_WINDOW);
+            const scale = revealed ? 1 + arrivalBump * 0.35 : 0.7;
             return (
               <div
                 key={node.key}
                 className={`${styles.node} ${revealed ? styles.nodeVisible : ""} ${styles[`kind_${node.kind}`]}`}
-                style={{ left: `${points[i].x}%`, top: `${(points[i].y / nodes.length) * 100}%` }}
+                style={{
+                  left: `${points[i].x}%`,
+                  top: `${(points[i].y / nodes.length) * 100}%`,
+                  transform: `translate(-50%, -50%) scale(${scale})`,
+                }}
               >
                 <div className={styles.bubble}>
                   {node.photoUrl ? (

@@ -74,6 +74,16 @@ export async function POST(request: NextRequest) {
       ffmpegPath,
       [
         "-y",
+        // Sin esto, ffmpeg/libx264 detectan la cantidad de CPUs de la
+        // MÁQUINA FÍSICA (llegamos a ver "threads=40" en los logs), no la
+        // cuota real del contenedor de Railway — con un video de celular en
+        // 4K, eso satura todo, el proceso queda directamente colgado en el
+        // frame 0 durante minutos y termina matado por el sistema (SIGKILL,
+        // consistente con quedarse sin memoria) en vez de terminar rápido.
+        // Limitarlo a 2 hilos, tanto para decodificar como para codificar,
+        // es lo que lo destraba.
+        "-threads",
+        "2",
         "-i",
         inputPath,
         "-t",
@@ -88,8 +98,10 @@ export async function POST(request: NextRequest) {
         "30",
         "-c:v",
         "libx264",
+        "-threads",
+        "2",
         "-preset",
-        "veryfast",
+        "ultrafast", // prioriza terminar rápido y liviano por sobre comprimir un poco mejor
         "-crf",
         "30",
         "-pix_fmt",
@@ -99,7 +111,7 @@ export async function POST(request: NextRequest) {
         "+faststart", // permite que el navegador empiece a reproducir antes de bajar el archivo entero
         outputPath,
       ],
-      { timeout: 90_000 },
+      { timeout: 120_000 },
     );
 
     const compressed = await readFile(outputPath);
