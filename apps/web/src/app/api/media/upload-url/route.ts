@@ -3,7 +3,6 @@ import { randomUUID } from "node:crypto";
 import { db, schema } from "@pettapp/db";
 import { auth } from "@/lib/auth";
 import { getStorage } from "@/lib/storage";
-import { mediaQueue } from "@pettapp/queue";
 
 interface Body {
   petId: string;
@@ -46,14 +45,10 @@ export async function POST(request: NextRequest) {
     storageKey: key,
   });
 
-  // El thumbnail se genera en el media-worker, no acá — este endpoint solo
-  // encola el trabajo y responde rápido.
-  await mediaQueue.add("thumbnail", {
-    mediaId,
-    petId: body.petId,
-    storageKey: key,
-    type: body.kind,
-  });
-
+  // Fase 0/1: sin worker aparte ni cola — se guarda la foto original y se
+  // usa directo (Home/Álbum/Gestionar ya muestran la original, ninguna
+  // pantalla lee `thumbKey` hoy). Un thumbnail generado aparte solo suma
+  // valor cuando haya volumen real de fotos pesadas; hasta entonces, menos
+  // piezas moviéndose es mejor.
   return NextResponse.json({ uploadUrl, mediaId, key, readUrl }, { status: 201 });
 }
