@@ -19,6 +19,8 @@ export default function PreviewHomePage() {
         giftsHref="/preview-regalos"
         vaccinationsCount={2}
         nextVaccineDue="2026-03-10"
+        milestonesCount={2}
+        growthHref="/preview-crecimiento"
       />
     </>
   );

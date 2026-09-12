@@ -1,19 +1,15 @@
 import { headers } from "next/headers";
 import { getPetHomeData } from "@/lib/pets-data";
-import { getVaccinations } from "@/lib/vaccinations-data";
 import { getMilestones } from "@/lib/milestones-data";
 import { getSurfacePrefix } from "@/lib/surface-prefix";
 import { hasPetAccess } from "@/lib/pin";
 import { PetPinGate } from "../PetPinGate";
-import { ManagePet } from "../../account/pets/[petId]/ManagePet";
+import { GrowthPath } from "./GrowthPath";
 
-// Vive en la superficie de la mascota (no ya en /app/pets/<id>) porque el
-// acceso ahora es por PIN, no por sesión — reutiliza el mismo componente
-// ManagePet de siempre, que no sabe ni le importa de dónde vino el permiso.
-export default async function GestionarPage() {
+export default async function CrecimientoPage() {
   const slug = (await headers()).get("x-pet-slug");
   const pet = slug ? await getPetHomeData(slug) : null;
-  const prefix = await getSurfacePrefix();
+  const prefix = await getSurfacePrefix(); // "" con dominio propio, "/p/<slug>" hoy sin uno
 
   if (!pet) {
     return (
@@ -28,16 +24,15 @@ export default async function GestionarPage() {
     return <PetPinGate petId={pet.id} petName={pet.name} />;
   }
 
-  const vaccinations = await getVaccinations(pet.id);
   const milestones = await getMilestones(pet.id);
 
   return (
-    <ManagePet
-      petId={pet.id}
-      initialPet={pet}
-      initialVaccinations={vaccinations}
-      initialMilestones={milestones}
-      accountHref={prefix || "/"}
+    <GrowthPath
+      petName={pet.name}
+      birthDate={pet.birthDate}
+      milestones={milestones}
+      backHref={prefix || "/"}
+      manageHref={`${prefix}/gestionar`}
     />
   );
 }

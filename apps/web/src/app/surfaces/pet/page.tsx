@@ -3,6 +3,7 @@ import { eq, and, isNull } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
 import { getPetHomeData } from "@/lib/pets-data";
 import { getVaccinations } from "@/lib/vaccinations-data";
+import { getMilestones } from "@/lib/milestones-data";
 import { getSurfacePrefix } from "@/lib/surface-prefix";
 import { hasPetAccess } from "@/lib/pin";
 import { OwnerHome } from "./OwnerHome";
@@ -48,6 +49,8 @@ export default async function PetHomePage() {
     .filter((d): d is string => Boolean(d))
     .sort()[0] ?? null;
 
+  const milestones = await getMilestones(pet.id);
+
   return (
     <OwnerHome
       pet={pet}
@@ -57,6 +60,8 @@ export default async function PetHomePage() {
       giftsCount={giftsCount}
       vaccinationsCount={vaccinations.length}
       nextVaccineDue={nextVaccineDue}
+      milestonesCount={milestones.length}
+      growthHref={`${prefix}/crecimiento`}
     />
   );
 }

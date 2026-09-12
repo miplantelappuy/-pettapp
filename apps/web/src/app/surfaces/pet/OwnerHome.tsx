@@ -19,6 +19,8 @@ interface Props {
   giftsHref?: string;
   vaccinationsCount?: number;
   nextVaccineDue?: string | null;
+  milestonesCount?: number;
+  growthHref?: string;
 }
 
 // Home del panel de dueño, versión glassmorphism: una foto/video a pantalla
@@ -35,6 +37,8 @@ export function OwnerHome({
   giftsHref = "/regalos",
   vaccinationsCount = 0,
   nextVaccineDue = null,
+  milestonesCount = 0,
+  growthHref = "/crecimiento",
 }: Props) {
   const speciesLabel = SPECIES_LABEL[pet.species] ?? "compañero";
   const heroIsVideo = pet.heroMedia?.type === "video";
@@ -147,8 +151,27 @@ export function OwnerHome({
       </Reveal>
 
       <Reveal>
+        <section className={`${styles.section} ${styles.panel} glass`}>
+          <span className={styles.eyebrow}>Crecimiento</span>
+          <h2 className={styles.panelTitle}>
+            {milestonesCount > 0
+              ? `${milestonesCount} ${milestonesCount === 1 ? "hito cargado" : "hitos cargados"}`
+              : "El camino de vida de tu mascota"}
+          </h2>
+          <p className={styles.panelText}>
+            {milestonesCount > 0
+              ? "Un recorrido con los momentos importantes, desde que llegó hasta hoy."
+              : "Cargá los momentos importantes desde Gestionar y arma el recorrido."}
+          </p>
+          <Link href={growthHref} className={styles.panelLink}>
+            Ver el camino →
+          </Link>
+        </section>
+      </Reveal>
+
+      <Reveal>
         <section className={`${styles.section} ${styles.comingSoonRow}`}>
-          {["Salud", "Crecimiento"].map((label) => (
+          {["Salud"].map((label) => (
             <div key={label} className={`${styles.comingSoonTile} glass`}>
               <span className={styles.tileTitle}>{label}</span>
               <span className={styles.soonTag}>pronto</span>

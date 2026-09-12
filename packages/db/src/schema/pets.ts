@@ -63,6 +63,20 @@ export const petMedia = pgTable("pet_media", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// "Camino de vida": hitos curados a mano (no cada foto del álbum, solo los
+// momentos importantes) que arman el recorrido tipo mapa de niveles que se
+// ve en /crecimiento — del nacimiento/llegada a la familia hasta hoy. Tabla
+// separada de pet_media a propósito: son cosas distintas (un álbum de fotos
+// vs. una línea de tiempo curada), aunque las dos guarden una foto.
+export const petMilestones = pgTable("pet_milestones", {
+  id: text("id").primaryKey(),
+  petId: text("pet_id").notNull().references((): AnyPgColumn => pets.id, { onDelete: "cascade" }),
+  title: text("title").notNull(), // ej: "Llegó a casa", "Primer verano en la playa"
+  occurredOn: date("occurred_on").notNull(),
+  storageKey: text("storage_key").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // Chapitas QR. Diseñadas para reemplazo: una mascota puede tener varias a lo
 // largo de su vida, y la relación histórica nunca se borra.
 export const qrTags = pgTable(

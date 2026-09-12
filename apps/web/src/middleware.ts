@@ -94,10 +94,17 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Todo excepto assets estáticos, archivos internos de Next, y el service
+    // Todo excepto assets estáticos, archivos internos de Next, el service
     // worker (sw.js DEBE servirse tal cual desde la raíz, sin reescribir —
     // si no, el navegador nunca lo registra y las notificaciones push no
-    // funcionan).
-    "/((?!_next/static|_next/image|favicon.ico|sw.js).*)",
+    // funcionan) y /api/ — para /api/ este middleware ya no hace nada más
+    // que "dejar pasar" (ver el corte temprano de arriba), pero Next igual
+    // buffereaba el body entero de cada request para poder pasárselo al
+    // middleware, con un tope de 10MB por default. Eso truncaba en
+    // silencio cualquier subida de más de 10MB (ej. el video de la
+    // portada) sin devolver ningún error — el fetch del navegador se
+    // quedaba esperando una respuesta que nunca llegaba bien. Sacando
+    // /api/ del matcher, Next ni se molesta en bufferear esos requests.
+    "/((?!_next/static|_next/image|favicon.ico|sw.js|api/).*)",
   ],
 };

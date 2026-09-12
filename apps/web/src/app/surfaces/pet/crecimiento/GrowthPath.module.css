@@ -1,0 +1,150 @@
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 5rem;
+}
+
+.backLink {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: none;
+  margin-bottom: 1rem;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2rem;
+  margin: 0 0 0.35rem;
+  color: var(--color-cloud);
+}
+
+.lead {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--color-cloud-dim);
+  margin: 0 0 2rem;
+}
+
+.empty {
+  padding: 2rem 1.5rem;
+  text-align: center;
+  font-family: var(--font-body);
+  color: var(--color-cloud-dim);
+}
+
+.emptyLink {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+/* ── El camino ── */
+
+.path {
+  position: relative;
+  width: 100%;
+}
+
+.pathSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.pathTrack {
+  fill: none;
+  stroke: var(--glass-border-strong);
+  stroke-width: 0.6;
+  stroke-linecap: round;
+}
+
+.pathAccent {
+  fill: none;
+  stroke: var(--color-mint);
+  stroke-width: 0.6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.1s linear;
+}
+
+.node {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  transform: translate(-50%, -50%) scale(0.7);
+  opacity: 0;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  width: 9rem;
+  text-align: center;
+}
+
+.nodeVisible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.bubble {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--glass-bg-strong);
+  border: 3px solid var(--color-mint);
+  box-shadow: var(--glass-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bubble img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bubbleIcon {
+  font-size: 1.8rem;
+}
+
+.kind_birth .bubble {
+  border-color: var(--color-violet);
+}
+
+.kind_today .bubble {
+  border-color: var(--color-accent);
+  background: linear-gradient(135deg, var(--color-accent), #ff6f8f);
+}
+
+.nodeTitle {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-cloud);
+  line-height: 1.2;
+}
+
+.nodeDate {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  color: var(--color-cloud-dim);
+}
+
+@media (min-width: 640px) {
+  .title {
+    font-size: 2.4rem;
+  }
+
+  .bubble {
+    width: 6rem;
+    height: 6rem;
+  }
+}

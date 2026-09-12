@@ -42,7 +42,11 @@ export default function PanelPage() {
           </a>
           <a href="/preview-manage" className={`${styles.tile} glass`}>
             <span className={styles.tileTitle}>⚙️ Gestionar mascota</span>
-            <span className={styles.tileText}>Fotos, estilo, contacto, vacunas</span>
+            <span className={styles.tileText}>Fotos, estilo, contacto, vacunas, hitos</span>
+          </a>
+          <a href="/preview-crecimiento" className={`${styles.tile} glass`}>
+            <span className={styles.tileTitle}>🐾 Crecimiento</span>
+            <span className={styles.tileText}>El camino de vida, tipo mapa de niveles</span>
           </a>
           <a href="/preview-emergency" className={`${styles.tile} glass`}>
             <span className={styles.tileTitle}>🚨 Perfil de emergencia</span>

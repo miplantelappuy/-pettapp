@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { PetHomeData, ResolvedMedia } from "@/lib/pets-data";
 import type { VaccinationRow } from "@/lib/vaccinations-data";
+import type { MilestoneRow } from "@/lib/milestones-data";
 import { albumStyles } from "@/app/surfaces/pet/recuerdos/album-styles/registry";
 import styles from "./ManagePet.module.css";
 
@@ -26,6 +27,9 @@ interface Props {
   petId: string;
   initialPet: PetHomeData;
   initialVaccinations: VaccinationRow[];
+  /** El "camino de vida" de Crecimiento — opcional para no romper ningún
+   * caller viejo que todavía no lo pasa. */
+  initialMilestones?: MilestoneRow[];
   /** true en /preview-manage: todo pasa en memoria, nada se guarda de verdad
    * (no hay login ni mascota real todavía sin dominio propio). */
   demoMode?: boolean;
@@ -34,13 +38,22 @@ interface Props {
   accountHref?: string;
 }
 
-export function ManagePet({ petId, initialPet, initialVaccinations, demoMode = false, accountHref }: Props) {
+export function ManagePet({
+  petId,
+  initialPet,
+  initialVaccinations,
+  initialMilestones = [],
+  demoMode = false,
+  accountHref,
+}: Props) {
   const [pet, setPet] = useState(initialPet);
   const [media, setMedia] = useState<ResolvedMedia[]>(initialPet.media);
   const [vaccinations, setVaccinations] = useState<VaccinationRow[]>(initialVaccinations);
+  const [milestones, setMilestones] = useState<MilestoneRow[]>(initialMilestones);
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState<string | null>(null);
   const [processingVideo, setProcessingVideo] = useState(false);
+  const [savingMilestone, setSavingMilestone] = useState(false);
 
   function flash(msg: string) {
     setSavedFlash(msg);
@@ -187,6 +200,42 @@ export function ManagePet({ petId, initialPet, initialVaccinations, demoMode = f
     await fetch(`/api/pets/vaccinations/${id}`, { method: "DELETE" });
   }
 
+  async function addMilestone(title: string, occurredOn: string, file: File) {
+    if (demoMode) {
+      const photoUrl = URL.createObjectURL(file);
+      setMilestones((list) =>
+        [...list, { id: `local-${Date.now()}`, title, occurredOn, photoUrl }].sort((a, b) =>
+          a.occurredOn.localeCompare(b.occurredOn),
+        ),
+      );
+      return;
+    }
+    setSavingMilestone(true);
+    try {
+      const form = new FormData();
+      form.append("title", title);
+      form.append("occurredOn", occurredOn);
+      form.append("file", file);
+      const res = await fetch(`/api/pets/${petId}/milestones`, { method: "POST", body: form });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) return flash(body?.error ?? "No se pudo guardar el hito");
+      setMilestones((list) =>
+        [...list, { id: body.id, title: body.title, occurredOn: body.occurredOn, photoUrl: body.photoUrl }].sort(
+          (a, b) => a.occurredOn.localeCompare(b.occurredOn),
+        ),
+      );
+      flash("Hito agregado al camino");
+    } finally {
+      setSavingMilestone(false);
+    }
+  }
+
+  async function removeMilestone(id: string) {
+    setMilestones((list) => list.filter((m) => m.id !== id));
+    if (demoMode) return;
+    await fetch(`/api/pets/milestones/${id}`, { method: "DELETE" });
+  }
+
   return (
     <div className={styles.page}>
       {demoMode && (
@@ -303,6 +352,32 @@ export function ManagePet({ petId, initialPet, initialVaccinations, demoMode = f
         </ul>
         <VaccinationForm onAdd={addVaccination} />
       </section>
+
+      {/* ── Crecimiento (camino de vida) ── */}
+      <section className={`${styles.section} glass`}>
+        <h2 className={styles.sectionTitle}>Crecimiento</h2>
+        <p className={styles.hint}>
+          Los momentos importantes de la vida de {pet.name} — arman el camino que se ve en el Home, desde que llegó a
+          la familia hasta hoy. Cada uno lleva una foto, una fecha y un título corto.
+        </p>
+        <ul className={styles.vaccineList}>
+          {milestones.map((m) => (
+            <li key={m.id} className={styles.vaccineRow}>
+              <span className={styles.milestoneInfo}>
+                <img className={styles.milestoneThumb} src={m.photoUrl} alt="" />
+                <span>
+                  <strong>{m.title}</strong> — {m.occurredOn}
+                </span>
+              </span>
+              <button type="button" onClick={() => removeMilestone(m.id)}>
+                Eliminar
+              </button>
+            </li>
+          ))}
+          {milestones.length === 0 && <li className={styles.hint}>Todavía no cargaste ningún hito.</li>}
+        </ul>
+        <MilestoneForm onAdd={addMilestone} saving={savingMilestone} />
+      </section>
     </div>
   );
 }
@@ -359,6 +434,40 @@ function VaccinationForm({ onAdd }: { onAdd: (name: string, appliedAt: string, n
       <input type="date" value={appliedAt} onChange={(e) => setAppliedAt(e.target.value)} />
       <input type="date" placeholder="Próxima dosis" value={nextDueAt} onChange={(e) => setNextDueAt(e.target.value)} />
       <button type="submit">Agregar</button>
+    </form>
+  );
+}
+
+function MilestoneForm({
+  onAdd,
+  saving,
+}: {
+  onAdd: (title: string, occurredOn: string, file: File) => void;
+  saving: boolean;
+}) {
+  const [title, setTitle] = useState("");
+  const [occurredOn, setOccurredOn] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+
+  return (
+    <form
+      className={styles.form}
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!title || !occurredOn || !file) return;
+        onAdd(title, occurredOn, file);
+        setTitle("");
+        setOccurredOn("");
+        setFile(null);
+        (e.target as HTMLFormElement).reset();
+      }}
+    >
+      <input placeholder="Título (ej: Llegó a casa)" value={title} onChange={(e) => setTitle(e.target.value)} />
+      <input type="date" value={occurredOn} onChange={(e) => setOccurredOn(e.target.value)} />
+      <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+      <button type="submit" disabled={saving || !title || !occurredOn || !file}>
+        {saving ? "Guardando…" : "Agregar"}
+      </button>
     </form>
   );
 }
