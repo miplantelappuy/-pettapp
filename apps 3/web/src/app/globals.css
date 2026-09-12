@@ -1,0 +1,155 @@
+/* Sistema de diseño de PettApp — glassmorphism.
+   Fondo blanco/neutro por ahora (antes era un gradiente vibrante multicolor;
+   se simplificó a pedido, con la idea de que más adelante el DUEÑO pueda
+   elegir su propia paleta acá mismo). Arriba de ese fondo flotan superficies
+   de vidrio (translúcidas + blur + borde suave). Un cambio de paleta a
+   futuro se hace acá, no archivo por archivo — el resto de la app se apoya
+   en estas variables y en la clase utilitaria .glass.
+
+   Excepción a propósito: en un puñado de lugares el texto va SIEMPRE sobre
+   una foto o una superficie de color fijo (el hero de OwnerHome, la tapa del
+   álbum, el cartel rojo de "perdido/a") — ahí el color se escribe literal
+   (blanco) en vez de usar --color-cloud, porque tiene que seguir siendo
+   legible sin importar qué fondo elija el dueño más adelante. */
+
+:root {
+  --gradient-app: radial-gradient(circle at 10% -5%, #fff3ea 0%, transparent 45%),
+    radial-gradient(circle at 92% 8%, #eef8f5 0%, transparent 42%), linear-gradient(180deg, #ffffff 0%, #f6f5fa 100%);
+
+  --color-ink: #14101f; /* texto sobre chips/superficies de color fijo */
+  --color-cloud: #201c30; /* texto principal de la app (hoy: oscuro sobre fondo claro) */
+  --color-cloud-dim: rgba(32, 28, 48, 0.62);
+  --color-accent: #ff8a5b; /* coral — CTA principal, calidez */
+  --color-accent-ink: #3a1608;
+  --color-violet: #8b7bf7; /* acentos secundarios, focos */
+  --color-mint: #14b092; /* un poco más oscuro que antes, para que se lea sobre blanco */
+  --color-danger: #e0424f;
+
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-bg-strong: rgba(255, 255, 255, 0.75);
+  --glass-bg-soft: rgba(255, 255, 255, 0.4);
+  --glass-border: rgba(20, 16, 31, 0.08);
+  --glass-border-strong: rgba(20, 16, 31, 0.14);
+  --glass-blur: 20px;
+  --glass-shadow: 0 24px 60px rgba(20, 16, 31, 0.1);
+  --radius-lg: 28px;
+  --radius-md: 18px;
+  --radius-sm: 12px;
+
+  --font-display: "Space Grotesk", "General Sans", "Segoe UI", system-ui, sans-serif;
+  --font-body: "General Sans", "Segoe UI", system-ui, sans-serif;
+
+  /* SOLO para las plantillas de álbum (recuerdos/album-styles/) — son
+     estilos fotográficos con su propio lenguaje intencionalmente distinto
+     del resto de la app (papel/vintage en vez de vidrio). No usar afuera de
+     esa carpeta; el resto de la app usa los tokens de arriba. */
+  --album-paper: #ede4d3;
+  --album-paper-light: #f7f2e9;
+  --album-brass: #b8823d;
+  --font-album-display: "Fraunces", Georgia, "Times New Roman", serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background: var(--gradient-app);
+  background-attachment: fixed;
+  color: var(--color-cloud);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* ── Utilidades de vidrio, para usar desde cualquier módulo CSS ─────────── */
+
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-lg);
+}
+
+.glassStrong {
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-lg);
+}
+
+.glassButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.85rem 1.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border-strong);
+  background: var(--glass-bg-strong);
+  color: var(--color-cloud);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.glassButton:hover {
+  background: rgba(255, 255, 255, 0.92);
+  transform: translateY(-1px);
+}
+
+.accentButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.95rem 1.5rem;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, var(--color-accent), #ff6f8f);
+  color: var(--color-accent-ink);
+  box-shadow: 0 14px 30px rgba(255, 111, 143, 0.35);
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.15s ease;
+}
+
+.accentButton:hover {
+  transform: translateY(-1px);
+}
+
+.accentButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+  transform: none;
+}
