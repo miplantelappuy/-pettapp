@@ -2,9 +2,18 @@
 
 import { forwardRef, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import HTMLFlipBook from "./FlipBook";
+import HTMLFlipBookImport from "./FlipBook";
 import type { Spread } from "./album-styles/types";
 import styles from "./Album3D.module.css";
+
+// react-pageflip declara casi todas sus props como obligatorias en su tipo
+// (IProps), aunque en tiempo de ejecución la mayoría tiene default — es un
+// problema conocido de sus tipos, no algo que podamos arreglar sin tocar la
+// librería. Forzamos "any" acá (un solo lugar) en vez de tener que
+// completar a mano una lista larga de props que ni siquiera pensamos usar,
+// solo para conformar a un tipo que no refleja el comportamiento real.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const HTMLFlipBook: any = HTMLFlipBookImport;
 
 interface Props {
   petName: string;
