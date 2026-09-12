@@ -10,6 +10,7 @@ import styles from "./emergency.module.css";
 export function ActivateTagForm({ token }: { token: string }) {
   const [name, setName] = useState("");
   const [species, setSpecies] = useState<"dog" | "cat" | "other">("dog");
+  const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("");
   const [status, setStatus] = useState<"idle" | "saving" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -22,7 +23,7 @@ export function ActivateTagForm({ token }: { token: string }) {
     const res = await fetch("/api/qr/activate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: token, pet: { name, species }, pin }),
+      body: JSON.stringify({ code: token, pet: { name, species, phone }, pin }),
     });
 
     if (!res.ok) {
@@ -57,6 +58,20 @@ export function ActivateTagForm({ token }: { token: string }) {
           <option value="other">Otro</option>
         </select>
       </label>
+
+      <label className={styles.field}>
+        <span>Tu teléfono</span>
+        <input
+          required
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="Ej: +59899123456"
+        />
+      </label>
+      <p className={styles.pinHint}>
+        Así, desde el primer momento, quien encuentre a {name || "tu mascota"} te puede contactar directamente.
+      </p>
 
       <label className={styles.field}>
         <span>Elegí un PIN (4 a 6 números)</span>

@@ -35,6 +35,13 @@ export interface PetHomeData {
    * disponible si el dueño todavía no eligió una, para que el perfil de
    * emergencia nunca se vea vacío. null solo si no hay ninguna foto cargada. */
   emergencyPhotoUrl: string | null;
+  /** Cuál foto eligió el dueño como ícono de "agregar a la pantalla de
+   * inicio" — null si todavía no eligió ninguna. */
+  iconMediaId: string | null;
+  /** La URL ya resuelta de esa foto, con el mismo fallback que
+   * emergencyPhotoUrl (primera foto disponible) para que el ícono nunca
+   * quede vacío una vez que hay al menos una foto cargada. */
+  iconUrl: string | null;
   heroMedia: ResolvedMedia | null;
   media: ResolvedMedia[];
 }
@@ -80,6 +87,13 @@ export async function getPetHomeData(slug: string): Promise<PetHomeData | null> 
     : undefined;
   const emergencyPhotoUrl = (chosenEmergencyPhoto ?? media.find((m) => m.type === "photo"))?.url ?? null;
 
+  // Mismo criterio que la foto de emergencia: siempre una foto (nunca un
+  // video — un ícono no puede depender de que algo cargue), con fallback a
+  // la primera disponible para que, apenas hay una foto cargada, "agregar a
+  // inicio" ya se vea bien sin que el dueño tenga que elegir nada todavía.
+  const chosenIcon = pet.iconMediaId ? media.find((m) => m.id === pet.iconMediaId && m.type === "photo") : undefined;
+  const iconUrl = (chosenIcon ?? media.find((m) => m.type === "photo"))?.url ?? null;
+
   return {
     id: pet.id,
     slug: pet.slug,
@@ -93,6 +107,8 @@ export async function getPetHomeData(slug: string): Promise<PetHomeData | null> 
     emergencyContactPhone: pet.emergencyContactPhone,
     emergencyPhotoMediaId: pet.emergencyPhotoMediaId,
     emergencyPhotoUrl,
+    iconMediaId: pet.iconMediaId,
+    iconUrl,
     heroMedia,
     media,
   };

@@ -42,6 +42,8 @@ export function getDemoPetHomeData(): PetHomeData {
     emergencyContactPhone: "+59899123456",
     emergencyPhotoMediaId: media[0].id,
     emergencyPhotoUrl: media[0].url,
+    iconMediaId: media[0].id,
+    iconUrl: media[0].url,
     heroMedia: media[0],
     media,
   };

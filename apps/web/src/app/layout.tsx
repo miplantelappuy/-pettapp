@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "PettApp",
+};
 
 // Space Grotesk (display, look moderno/geométrico para el sistema glass) sí
 // está en Google Fonts. General Sans (cuerpo) NO está en Google Fonts — se

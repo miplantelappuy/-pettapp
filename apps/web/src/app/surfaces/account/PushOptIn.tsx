@@ -3,9 +3,12 @@
 import { useEffect, useState } from "react";
 
 // Activa notificaciones push del navegador (estándar, sin costo) para que
-// la familia se entere al toque cuando alguien escanea la chapita de
-// cualquiera de sus mascotas. Un solo botón: "Activar avisos".
-export function PushOptIn({ organizationId }: { organizationId: string }) {
+// la familia se entere al toque cuando alguien escanea la chapita de su
+// mascota — con la ubicación, cuando la persona que escaneó la comparte.
+// Identificado por petId (no por organización): así funciona igual desde
+// /gestionar (PIN, sin cuenta — el flujo principal) que desde /app (sesión
+// por email) — ver /api/push/subscribe.
+export function PushOptIn({ petId }: { petId: string }) {
   const [status, setStatus] = useState<"idle" | "unsupported" | "asking" | "on" | "error">("idle");
 
   useEffect(() => {
@@ -41,7 +44,7 @@ export function PushOptIn({ organizationId }: { organizationId: string }) {
       await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ organizationId, subscription: subscription.toJSON() }),
+        body: JSON.stringify({ petId, subscription: subscription.toJSON() }),
       });
 
       setStatus("on");

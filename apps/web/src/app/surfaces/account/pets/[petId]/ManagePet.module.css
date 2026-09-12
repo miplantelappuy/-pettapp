@@ -85,10 +85,17 @@
   display: block;
 }
 
-.heroTag {
+.photoTags {
   position: absolute;
   top: 6px;
   left: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-start;
+}
+
+.heroTag {
   background: var(--color-accent);
   color: var(--color-accent-ink);
   font-size: 0.6rem;

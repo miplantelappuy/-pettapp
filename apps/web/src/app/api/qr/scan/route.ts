@@ -15,7 +15,7 @@ interface Body {
 // Se llama hasta 2 veces por visita: una apenas se abre la página (sin
 // ubicación, para avisar YA) y otra si el navegador consigue la ubicación
 // del que escaneó (con su permiso explícito vía el propio diálogo del
-// navegador) — ver ScanReporter.tsx.
+// navegador) — ver EmergencyActions.tsx.
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as Body;
   if (!body?.token) return NextResponse.json({ error: "Falta token" }, { status: 400 });

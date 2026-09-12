@@ -35,7 +35,7 @@ export default async function AccountPage() {
     <main className={styles.page}>
       <h1 className={styles.title}>Tu familia</h1>
 
-      {organizationId && <PushOptIn organizationId={organizationId} />}
+      {pets[0] && <PushOptIn petId={pets[0].id} />}
 
       {pets.length > 0 && (
         <ul className={styles.petList}>

@@ -12,6 +12,11 @@ interface ActivateBody {
   pet: {
     name: string;
     species: "dog" | "cat" | "other";
+    // Teléfono del dueño — se guarda directamente como emergencyContactPhone
+    // (el mismo que ve quien escanea la chapita) en vez de sumar un campo
+    // aparte: es el mismo dato, y así queda cargado desde el momento uno en
+    // vez de depender de que el dueño entre después a Gestionar a cargarlo.
+    phone: string;
   };
   // PIN que va a proteger su panel de dueño (ver lib/pin.ts). Reemplaza al
   // login por email para este flujo: activar una chapita ya NO requiere
@@ -30,7 +35,7 @@ const PIN_RE = /^\d{4,6}$/;
 // parte de este flujo.)
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as ActivateBody | null;
-  if (!body?.code || !body?.pet?.name || !body?.pet?.species || !body?.pin) {
+  if (!body?.code || !body?.pet?.name || !body?.pet?.species || !body?.pet?.phone || !body?.pin) {
     return NextResponse.json({ error: "Faltan campos" }, { status: 400 });
   }
   if (!PIN_RE.test(body.pin)) {
@@ -63,6 +68,7 @@ export async function POST(request: NextRequest) {
         slug,
         name: body.pet.name,
         species: body.pet.species,
+        emergencyContactPhone: body.pet.phone,
         managePinHash: pinHash,
       });
 

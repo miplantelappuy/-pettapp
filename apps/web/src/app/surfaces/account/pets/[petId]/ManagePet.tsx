@@ -6,6 +6,7 @@ import type { PetHomeData, ResolvedMedia } from "@/lib/pets-data";
 import type { VaccinationRow } from "@/lib/vaccinations-data";
 import type { MilestoneRow } from "@/lib/milestones-data";
 import { albumStyles } from "@/app/surfaces/pet/recuerdos/album-styles/registry";
+import { PushOptIn } from "../../PushOptIn";
 import styles from "./ManagePet.module.css";
 
 // Estilos ya nombrados en la visión del producto pero todavía no
@@ -103,6 +104,21 @@ export function ManagePet({
       body: JSON.stringify({ emergencyPhotoMediaId: mediaId }),
     });
     flash("Foto de emergencia actualizada");
+  }
+
+  // Qué foto usa el navegador como ícono cuando el dueño "agrega a la
+  // pantalla de inicio" (ver surfaces/pet/layout.tsx + /api/manifest) — un
+  // tercer rol posible para una foto, además de portada (ya no elegible) y
+  // foto de emergencia.
+  async function setAppIcon(mediaId: string) {
+    setPet((p) => ({ ...p, iconMediaId: mediaId }) as PetHomeData);
+    if (demoMode) return flash("Ícono de la app actualizado (vista previa)");
+    await fetch(`/api/pets/${petId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ iconMediaId: mediaId }),
+    });
+    flash("Ícono de la app actualizado");
   }
 
   async function removePhoto(mediaId: string) {
@@ -280,6 +296,18 @@ export function ManagePet({
       <h1 className={styles.title}>Gestionar a {pet.name}</h1>
       {savedFlash && <div className={styles.flash}>{savedFlash}</div>}
 
+      {/* ── Avisos ── */}
+      {!demoMode && (
+        <section className={`${styles.section} glass`}>
+          <h2 className={styles.sectionTitle}>Avisos</h2>
+          <p className={styles.hint}>
+            Activalo en este teléfono para enterarte al toque cuando alguien escanee la chapita de {pet.name} — con su
+            ubicación aproximada, cuando la persona que la encontró decida compartirla.
+          </p>
+          <PushOptIn petId={petId} />
+        </section>
+      )}
+
       {/* ── Fotos y videos ── */}
       <section className={`${styles.section} glass`}>
         <h2 className={styles.sectionTitle}>Fotos y videos</h2>
@@ -287,7 +315,8 @@ export function ManagePet({
           La portada del Home puede ser una foto o un video (se reproduce sin sonido, se recorta a los primeros 20
           segundos y se comprime automáticamente para que cargue rápido) — ya no se elige a mano: rota sola entre
           todo lo que cargues, así el Home nunca se siente igual dos veces. Los videos acá abajo no se reproducen
-          solos (para no enlentecer la app a medida que sumes más) — tocalos para verlos.
+          solos (para no enlentecer la app a medida que sumes más) — tocalos para verlos. Marcá una foto como 🚨
+          Emergencia o 📱 Ícono para elegir cuál usar en cada caso (una foto cuadrada se ve mejor como ícono).
         </p>
         <div className={styles.photoGrid}>
           {media.map((m) => (
@@ -297,11 +326,19 @@ export function ManagePet({
               ) : (
                 <img src={m.url} alt="" />
               )}
-              {pet.emergencyPhotoMediaId === m.id && <span className={styles.heroTag}>🚨 Emergencia</span>}
+              <div className={styles.photoTags}>
+                {pet.emergencyPhotoMediaId === m.id && <span className={styles.heroTag}>🚨 Emergencia</span>}
+                {pet.iconMediaId === m.id && <span className={styles.heroTag}>📱 Ícono</span>}
+              </div>
               <div className={styles.photoActions}>
                 {m.type === "photo" && pet.emergencyPhotoMediaId !== m.id && (
                   <button type="button" onClick={() => setEmergencyPhoto(m.id)}>
                     🚨 Emergencia
+                  </button>
+                )}
+                {m.type === "photo" && pet.iconMediaId !== m.id && (
+                  <button type="button" onClick={() => setAppIcon(m.id)}>
+                    📱 Ícono
                   </button>
                 )}
                 <button type="button" onClick={() => removePhoto(m.id)}>

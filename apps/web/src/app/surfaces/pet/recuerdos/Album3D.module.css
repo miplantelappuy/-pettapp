@@ -15,9 +15,30 @@
   padding: 4rem 1rem;
 }
 
+/* Pensado ante todo para horizontal: dos páginas lado a lado, como un álbum
+   de verdad abierto sobre la mesa (relación 19:13, la misma proporción que
+   width×2 : height de abajo) — en vertical el libro se sigue viendo (nunca
+   se bloquea), pero más chico y con el aviso de arriba invitando a girar. */
 .bookWrap {
-  width: min(92vw, 640px);
-  aspect-ratio: 4 / 3;
+  width: min(94vw, 980px);
+  aspect-ratio: 19 / 13;
+}
+
+/* Oculto por default: en horizontal las dos páginas ya se aprecian bien
+   solas, así que el aviso solo aparece cuando de verdad ayuda. */
+.rotateHint {
+  display: none;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--album-brass);
+  text-align: center;
+  margin: 0 0 0.25rem;
+}
+
+@media (orientation: portrait) {
+  .rotateHint {
+    display: block;
+  }
 }
 
 /* react-pageflip pinta su propia estructura interna (sombras, doblez, etc.)

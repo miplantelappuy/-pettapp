@@ -10,6 +10,7 @@ interface Body {
   emergencyContactName?: string | null;
   emergencyContactPhone?: string | null;
   emergencyPhotoMediaId?: string | null;
+  iconMediaId?: string | null;
 }
 
 // PATCH /api/pets/:petId — edición general que hace el dueño desde "Gestionar
@@ -43,6 +44,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
     }
     patch.emergencyPhotoMediaId = body.emergencyPhotoMediaId;
+  }
+  if (body.iconMediaId !== undefined) {
+    if (body.iconMediaId !== null) {
+      // Mismo chequeo que la foto de emergencia: solo una foto propia de
+      // ESTA mascota, nunca un video ni la de otra.
+      const media = await db.query.petMedia.findFirst({ where: eq(schema.petMedia.id, body.iconMediaId) });
+      if (!media || media.petId !== petId || media.type !== "photo") {
+        return NextResponse.json({ error: "Foto inválida para el ícono de la app" }, { status: 400 });
+      }
+    }
+    patch.iconMediaId = body.iconMediaId;
   }
 
   if (Object.keys(patch).length === 0) {

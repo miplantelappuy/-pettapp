@@ -3,7 +3,7 @@ import { db, schema } from "@pettapp/db";
 import { resolveScanView } from "@/lib/qr";
 import { getPetHomeData } from "@/lib/pets-data";
 import { crossSurfaceUrl, emergencyPath } from "@/lib/env";
-import { ScanReporter } from "./ScanReporter";
+import { EmergencyActions } from "./EmergencyActions";
 import { ActivateTagForm } from "./ActivateTagForm";
 import styles from "./emergency.module.css";
 
@@ -72,25 +72,7 @@ export default async function EmergencyPage({ params }: { params: Promise<{ toke
         <h1 className={styles.name}>Hola 🐾 Soy {pet?.name}</h1>
         <p className={styles.subtitle}>Creo que estoy perdido/a. ¿Me ayudás a volver a casa?</p>
 
-        {pet?.emergencyContactPhone ? (
-          <div className={styles.actionRow}>
-            <a href={`tel:${pet.emergencyContactPhone}`} className="accentButton">
-              📞 Llamar a mi familia
-            </a>
-            <a
-              href={`https://wa.me/${pet.emergencyContactPhone.replace(/\D/g, "")}`}
-              target="_blank"
-              rel="noreferrer"
-              className="glassButton"
-            >
-              💬 WhatsApp
-            </a>
-          </div>
-        ) : (
-          <p className={styles.noPhone}>Su familia todavía no cargó un teléfono de contacto.</p>
-        )}
-
-        {pet && <ScanReporter token={token} petName={pet.name} />}
+        {pet && <EmergencyActions token={token} petName={pet.name} phone={pet.emergencyContactPhone ?? null} />}
       </div>
 
       {pet && petData && (
