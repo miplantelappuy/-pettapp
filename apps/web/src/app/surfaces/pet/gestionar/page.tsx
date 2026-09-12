@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import * as QRCode from "qrcode";
-import { getPetHomeData, getActiveTagToken } from "@/lib/pets-data";
+import { getPetHomeData, getActiveTagToken, getLastSharedScan } from "@/lib/pets-data";
 import { getVaccinations } from "@/lib/vaccinations-data";
 import { getMilestones } from "@/lib/milestones-data";
 import { getSurfacePrefix } from "@/lib/surface-prefix";
@@ -37,6 +37,7 @@ export default async function GestionarPage() {
   // del celular para llegar acá. Mismo generador (qrcode) que ya usa
   // /app/qr, aplicado a la chapita real de esta mascota en vez de un lote.
   const qrDataUrl = activeToken ? await QRCode.toDataURL(scanUrlFor(activeToken), { margin: 1, width: 240 }) : null;
+  const lastScan = await getLastSharedScan(pet.id);
 
   return (
     <ManagePet
@@ -48,6 +49,7 @@ export default async function GestionarPage() {
       emergencyHref={activeToken ? emergencyPath(activeToken) : "/preview-emergency"}
       emergencyIsReal={Boolean(activeToken)}
       qrDataUrl={qrDataUrl}
+      lastScan={lastScan}
     />
   );
 }

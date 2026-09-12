@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
 import { sendPushToOrganization } from "@/lib/push";
+import { crossSurfaceUrl } from "@/lib/env";
 
 interface Body {
   token: string;
@@ -39,11 +40,17 @@ export async function POST(request: NextRequest) {
 
   try {
     if (hasGeo) {
-      const mapsUrl = `https://maps.google.com/?q=${body.lat},${body.lng}`;
+      // OJO: antes esto apuntaba directo a maps.google.com. Un service
+      // worker abriendo una URL de otro origen con clients.openWindow() es
+      // poco confiable entre navegadores (en la práctica, al tocar la
+      // notificación no pasaba nada) — en cambio, un link normal (<a href>)
+      // a Maps SIEMPRE funciona. Por eso ahora la notificación lleva al
+      // propio panel de Gestionar, que ya muestra la última ubicación
+      // compartida con ese link de verdad (ver ManagePet.tsx).
       await sendPushToOrganization(pet.organizationId, {
         title: `📍 Ubicación de ${pet.name}`,
-        body: "Alguien compartió dónde escaneó su chapita.",
-        url: mapsUrl,
+        body: "Alguien compartió dónde escaneó su chapita. Tocá para verla.",
+        url: crossSurfaceUrl(pet.slug, "/gestionar"),
       });
     } else {
       await sendPushToOrganization(pet.organizationId, {

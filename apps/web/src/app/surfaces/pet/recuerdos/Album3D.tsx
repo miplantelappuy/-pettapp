@@ -88,10 +88,6 @@ export function Album3D({ petName, spreads, renderSpread }: Props) {
       {/* El ancho concreto vive en este div (no confiamos en que "stretch"
           adivine un tamaño sin un contenedor con medida propia) — el libro
           se estira para llenarlo, dentro de los límites min/max de abajo. */}
-      <p className={styles.rotateHint} aria-hidden>
-        🔄 Para ver las dos páginas juntas, como un libro de verdad, girá el teléfono
-      </p>
-
       <div className={styles.bookWrap}>
         <HTMLFlipBook
           ref={bookRef}

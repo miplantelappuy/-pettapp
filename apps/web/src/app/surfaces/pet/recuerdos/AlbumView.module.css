@@ -1,0 +1,43 @@
+.page {
+  min-height: 100vh;
+}
+
+.backBar {
+  padding: 1.25rem 1.5rem 0;
+}
+
+.backLink {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+/* El truco: mientras el teléfono está en vertical, en vez de solo pedirle a
+   la persona que lo gire (lo que probamos antes y seguía siendo "opcional"),
+   giramos NOSOTROS todo el álbum 90° con CSS y lo hacemos ocupar toda la
+   pantalla — funciona en cualquier navegador, incluido iPhone, porque no
+   depende de ningún permiso ni de una API que Safari no soporta (la
+   rotación real de pantalla, screen.orientation.lock, sí se intenta también
+   desde AlbumView.tsx, pero solo funciona en algunos Android — este CSS es
+   lo que garantiza que en TODOS lados el efecto sea el mismo, sin que la
+   persona tenga que hacer nada).
+   Con el teléfono ya en horizontal (real), esta regla no hace nada: el
+   álbum se ve directo, sin ningún giro de por medio. */
+@media (orientation: portrait) {
+  .forcedLandscape {
+    position: fixed;
+    top: 0;
+    left: 100%;
+    width: 100vh;
+    height: 100vw;
+    transform-origin: 0 0;
+    transform: rotate(90deg);
+    background: var(--album-ink, #2b2013);
+    overflow-y: auto;
+    z-index: 40;
+  }
+
+  .backBar {
+    padding: 0.75rem 1rem 0;
+  }
+}

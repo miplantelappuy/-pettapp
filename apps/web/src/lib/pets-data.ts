@@ -1,4 +1,4 @@
-import { eq, asc, and } from "drizzle-orm";
+import { eq, asc, desc, and } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
 import { getStorage } from "./storage";
 
@@ -124,4 +124,30 @@ export async function getActiveTagToken(petId: string): Promise<string | null> {
     where: and(eq(schema.qrTags.petId, petId), eq(schema.qrTags.status, "active")),
   });
   return tag?.publicToken ?? null;
+}
+
+export interface LastScanLocation {
+  lat: number;
+  lng: number;
+  scannedAt: string;
+}
+
+// La última vez que alguien escaneó la chapita ACTIVA de esta mascota y
+// compartió su ubicación (no todos los escaneos la comparten — es opcional
+// para quien encuentra a la mascota). Reutiliza qr_scans, que ya guarda cada
+// escaneo con o sin ubicación — no hace falta ninguna columna nueva. null si
+// todavía no hay ninguna chapita activa, o si nunca compartieron ubicación.
+export async function getLastSharedScan(petId: string): Promise<LastScanLocation | null> {
+  const tag = await db.query.qrTags.findFirst({
+    where: and(eq(schema.qrTags.petId, petId), eq(schema.qrTags.status, "active")),
+  });
+  if (!tag) return null;
+
+  const scan = await db.query.qrScans.findFirst({
+    where: and(eq(schema.qrScans.qrTagId, tag.id), eq(schema.qrScans.geoShared, true)),
+    orderBy: [desc(schema.qrScans.scannedAt)],
+  });
+  if (!scan || scan.lat === null || scan.lng === null) return null;
+
+  return { lat: Number(scan.lat), lng: Number(scan.lng), scannedAt: scan.scannedAt.toISOString() };
 }

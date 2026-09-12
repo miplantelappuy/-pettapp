@@ -1,11 +1,14 @@
 .stage {
+  width: 100%;
+  height: 100%;
   min-height: 80vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 1.1rem;
-  padding: 3rem 1rem;
+  padding: 1.25rem 1rem;
+  box-sizing: border-box;
 }
 
 .empty {
@@ -17,27 +20,35 @@
 
 /* Pensado ante todo para horizontal: dos páginas lado a lado, como un álbum
    de verdad abierto sobre la mesa (relación 19:13, la misma proporción que
-   width×2 : height de abajo) — en vertical el libro se sigue viendo (nunca
-   se bloquea), pero más chico y con el aviso de arriba invitando a girar. */
+   width×2 : height de abajo). AlbumView ya se encarga de que esto SIEMPRE se
+   vea en horizontal (gira la pantalla sola si hace falta, ver
+   AlbumView.module.css) — acá solo falta que, ya en horizontal, el tamaño
+   entre completo sin importar qué tan angosto (por ancho) o bajo (por alto)
+   sea el dispositivo. Por eso el ancho se calcula con TRES topes a la vez —
+   el más chico gana — y no solo con vw como antes (que en un celular en
+   horizontal de verdad, bien bajo de alto, se pasaba de largo y no entraba
+   completo en la pantalla):
+   1) 94vw:                que no toque los bordes laterales.
+   2) 980px:               que no crezca de más en una tablet o desktop.
+   3) 86vh convertido a ancho con la misma proporción (19:13): que la ALTURA
+      resultante nunca supere el 86% del alto disponible. */
 .bookWrap {
-  width: min(94vw, 980px);
+  width: min(94vw, 980px, calc(86vh * 19 / 13));
   aspect-ratio: 19 / 13;
 }
 
-/* Oculto por default: en horizontal las dos páginas ya se aprecian bien
-   solas, así que el aviso solo aparece cuando de verdad ayuda. */
-.rotateHint {
-  display: none;
-  font-family: var(--font-body);
-  font-size: 0.8rem;
-  color: var(--album-brass);
-  text-align: center;
-  margin: 0 0 0.25rem;
-}
-
+/* Dentro del truco de rotación de AlbumView (portrait real del teléfono,
+   pantalla ya girada visualmente con CSS) los ejes quedan invertidos: lo que
+   se ve como "ancho" en pantalla corresponde al ALTO real del viewport, y lo
+   que se ve "alto" corresponde al ANCHO real — así que acá recalculamos los
+   mismos tres topes con vw/vh cambiados de lugar. */
 @media (orientation: portrait) {
-  .rotateHint {
-    display: block;
+  .stage {
+    min-height: 80vw;
+  }
+
+  .bookWrap {
+    width: min(94vh, 980px, calc(86vw * 19 / 13));
   }
 }
 

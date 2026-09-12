@@ -48,6 +48,10 @@ interface Props {
    * <img> (generado en el server con la librería "qrcode") — null si
    * todavía no hay ninguna chapita activa para esta mascota. */
   qrDataUrl?: string | null;
+  /** La última vez que alguien escaneó la chapita activa y compartió su
+   * ubicación (ver lib/pets-data.ts#getLastSharedScan) — null si nunca pasó
+   * (todavía, o porque quien escaneó no la compartió esa vez). */
+  lastScan?: { lat: number; lng: number; scannedAt: string } | null;
 }
 
 export function ManagePet({
@@ -60,6 +64,7 @@ export function ManagePet({
   emergencyHref = "/preview-emergency",
   emergencyIsReal = false,
   qrDataUrl = null,
+  lastScan = null,
 }: Props) {
   const [pet, setPet] = useState(initialPet);
   const [media, setMedia] = useState<ResolvedMedia[]>(initialPet.media);
@@ -305,6 +310,19 @@ export function ManagePet({
             ubicación aproximada, cuando la persona que la encontró decida compartirla.
           </p>
           <PushOptIn petId={petId} />
+          {lastScan && (
+            <p className={styles.hint} style={{ marginTop: "0.75rem" }}>
+              📍 Última ubicación compartida: {new Date(lastScan.scannedAt).toLocaleString("es-UY")} —{" "}
+              <a
+                href={`https://maps.google.com/?q=${lastScan.lat},${lastScan.lng}`}
+                target="_blank"
+                rel="noreferrer"
+                className={styles.panelLink}
+              >
+                Ver en Google Maps →
+              </a>
+            </p>
+          )}
         </section>
       )}
 

@@ -3,7 +3,7 @@ import { eq, and } from "drizzle-orm";
 import * as QRCode from "qrcode";
 import { db, schema } from "@pettapp/db";
 import { auth } from "@/lib/auth";
-import { getPetHomeData, getActiveTagToken } from "@/lib/pets-data";
+import { getPetHomeData, getActiveTagToken, getLastSharedScan } from "@/lib/pets-data";
 import { getVaccinations } from "@/lib/vaccinations-data";
 import { getMilestones } from "@/lib/milestones-data";
 import { getSurfacePrefix } from "@/lib/surface-prefix";
@@ -51,6 +51,7 @@ export default async function ManagePetPage({ params }: { params: Promise<{ petI
   const prefix = await getSurfacePrefix(); // "" con dominio propio, "/app" hoy sin uno
   const activeToken = await getActiveTagToken(petId);
   const qrDataUrl = activeToken ? await QRCode.toDataURL(scanUrlFor(activeToken), { margin: 1, width: 240 }) : null;
+  const lastScan = await getLastSharedScan(petId);
 
   return (
     <ManagePet
@@ -62,6 +63,7 @@ export default async function ManagePetPage({ params }: { params: Promise<{ petI
       emergencyHref={activeToken ? emergencyPath(activeToken) : "/preview-emergency"}
       emergencyIsReal={Boolean(activeToken)}
       qrDataUrl={qrDataUrl}
+      lastScan={lastScan}
     />
   );
 }
