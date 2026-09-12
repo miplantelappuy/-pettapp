@@ -17,6 +17,11 @@ const PLANNED_STYLES = [
   { id: "divertido", label: "Divertido / infantil" },
 ];
 
+// Mismo tope que /api/media/upload-video — chequearlo acá antes de subir
+// evita esperar toda la subida para recién ahí enterarse de que el archivo
+// es demasiado pesado.
+const MAX_VIDEO_BYTES = 300 * 1024 * 1024;
+
 interface Props {
   petId: string;
   initialPet: PetHomeData;
@@ -35,6 +40,7 @@ export function ManagePet({ petId, initialPet, initialVaccinations, demoMode = f
   const [vaccinations, setVaccinations] = useState<VaccinationRow[]>(initialVaccinations);
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState<string | null>(null);
+  const [processingVideo, setProcessingVideo] = useState(false);
 
   function flash(msg: string) {
     setSavedFlash(msg);
@@ -98,12 +104,49 @@ export function ManagePet({ petId, initialPet, initialVaccinations, demoMode = f
       return;
     }
 
+    if (kind === "video") {
+      // El video pasa por nuestro servidor (no por una URL firmada directa
+      // a R2 como la foto) porque acá se comprime con ffmpeg antes de
+      // guardarlo — si no, un video de celular sin tocar puede pesar
+      // cientos de MB y tardar una eternidad en cargar (o ni verse) en el
+      // panel de cualquiera que visite a la mascota.
+      if (file.size > MAX_VIDEO_BYTES) {
+        return flash("El video pesa demasiado (máx. 300MB). Probá con un clip más corto.");
+      }
+      setProcessingVideo(true);
+      try {
+        const form = new FormData();
+        form.append("petId", petId);
+        form.append("file", file);
+        const res = await fetch("/api/media/upload-video", { method: "POST", body: form });
+        const body = await res.json().catch(() => null);
+        if (!res.ok) return flash(body?.error ?? "No se pudo subir el video");
+        setMedia((list) => [
+          ...list,
+          {
+            id: body.mediaId,
+            type: "video",
+            url: body.readUrl,
+            caption: null,
+            width: null,
+            height: null,
+            isProfileHero: false,
+            orderIndex: list.length,
+          },
+        ]);
+        flash("Video subido y comprimido");
+      } finally {
+        setProcessingVideo(false);
+      }
+      return;
+    }
+
     const res = await fetch("/api/media/upload-url", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ petId, contentType: file.type, kind }),
     });
-    if (!res.ok) return flash(kind === "video" ? "No se pudo subir el video" : "No se pudo subir la foto");
+    if (!res.ok) return flash("No se pudo subir la foto");
     const { uploadUrl, mediaId, readUrl } = await res.json();
     await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
     setMedia((list) => [
@@ -119,7 +162,7 @@ export function ManagePet({ petId, initialPet, initialVaccinations, demoMode = f
         orderIndex: list.length,
       },
     ]);
-    flash(kind === "video" ? "Video subido" : "Foto subida — la miniatura se procesa en unos segundos");
+    flash("Foto subida — la miniatura se procesa en unos segundos");
   }
 
   async function addVaccination(name: string, appliedAt: string, nextDueAt: string) {
@@ -165,7 +208,8 @@ export function ManagePet({ petId, initialPet, initialVaccinations, demoMode = f
       <section className={`${styles.section} glass`}>
         <h2 className={styles.sectionTitle}>Fotos y videos</h2>
         <p className={styles.hint}>
-          La portada del panel puede ser una foto o un video (se reproduce sin sonido). Elegí cuál con la estrella.
+          La portada del panel puede ser una foto o un video (se reproduce sin sonido, se recorta a los primeros 20
+          segundos y se comprime automáticamente para que cargue rápido). Elegí cuál con la estrella.
         </p>
         <div className={styles.photoGrid}>
           {media.map((m) => (
@@ -188,12 +232,13 @@ export function ManagePet({ petId, initialPet, initialVaccinations, demoMode = f
               </div>
             </div>
           ))}
-          <label className={styles.addPhoto}>
-            + Agregar foto o video
+          <label className={styles.addPhoto} aria-disabled={processingVideo}>
+            {processingVideo ? "Comprimiendo video…" : "+ Agregar foto o video"}
             <input
               type="file"
               accept="image/*,video/*"
               hidden
+              disabled={processingVideo}
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) addMediaFromFile(file);
