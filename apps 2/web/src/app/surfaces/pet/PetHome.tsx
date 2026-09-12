@@ -18,6 +18,10 @@ interface Props {
   /** A dónde apunta "Ver el álbum". Por defecto la ruta real (subdominio de
    * la mascota); la vista previa sin dominio propio la pisa con /preview-album. */
   albumHref?: string;
+  /** A dónde apunta "Mi cuenta" en el menú (☰). Sin esto, no se muestra el
+   * link — así la vista previa (que no tiene una cuenta real detrás) puede
+   * simplemente no pasarlo. */
+  accountHref?: string;
 }
 
 // Composición deliberadamente NO-grilla: cada sección tiene un tamaño y un
@@ -25,13 +29,13 @@ interface Props {
 // barra de navegación inferior fija para las funciones principales. Ver la
 // explicación completa en el chat: la jerarquía visual es la que evita que
 // esto se sienta un dashboard.
-export function PetHome({ pet, albumHref = "/recuerdos" }: Props) {
+export function PetHome({ pet, albumHref = "/recuerdos", accountHref }: Props) {
   const age = formatPetAge(pet.birthDate, pet.birthDatePrecision);
   const secondaryLine = pet.bioPhrase || age || `Un/a ${SPECIES_LABEL[pet.species] ?? "compañero"} con su propia app`;
 
   return (
     <main className={styles.page}>
-      <Hero name={pet.name} secondaryLine={secondaryLine} heroUrl={pet.heroMedia?.url ?? null} />
+      <Hero name={pet.name} secondaryLine={secondaryLine} heroUrl={pet.heroMedia?.url ?? null} accountHref={accountHref} />
       <RecuerdosScrapbook albumHref={albumHref} pet={pet} />
       <HistoriaCrecimientoDuo previewUrl={pickPreview(pet, 3)} />
       <div className={styles.bottomNavSpacer} aria-hidden />
@@ -49,10 +53,12 @@ function Hero({
   name,
   secondaryLine,
   heroUrl,
+  accountHref,
 }: {
   name: string;
   secondaryLine: string;
   heroUrl: string | null;
+  accountHref?: string;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -77,6 +83,11 @@ function Hero({
 
       {menuOpen && (
         <div className={styles.menuPanel}>
+          {accountHref && (
+            <Link href={accountHref} className={styles.menuItem}>
+              Mi cuenta
+            </Link>
+          )}
           <span className={styles.menuItem}>
             Mi historia <em className={styles.menuSoon}>pronto</em>
           </span>
