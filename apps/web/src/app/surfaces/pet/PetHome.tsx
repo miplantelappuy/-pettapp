@@ -14,20 +14,23 @@ const SPECIES_LABEL: Record<string, string> = {
 
 interface Props {
   pet: PetHomeData;
+  /** A dónde apunta "Ver el álbum". Por defecto la ruta real (subdominio de
+   * la mascota); la vista previa sin dominio propio la pisa con /preview-album. */
+  albumHref?: string;
 }
 
 // Composición deliberadamente NO-grilla: cada sección tiene un tamaño y un
 // rol distinto (hero → módulo grande de Recuerdos → dúo asimétrico → franja
 // de utilidad chica al final). Ver la explicación completa en el chat: la
 // jerarquía visual es la que evita que esto se sienta un dashboard.
-export function PetHome({ pet }: Props) {
+export function PetHome({ pet, albumHref = "/recuerdos" }: Props) {
   const age = formatPetAge(pet.birthDate, pet.birthDatePrecision);
   const secondaryLine = pet.bioPhrase || age || `Un/a ${SPECIES_LABEL[pet.species] ?? "compañero"} con su propia app`;
 
   return (
     <main className={styles.page}>
       <Hero name={pet.name} secondaryLine={secondaryLine} heroUrl={pet.heroMedia?.url ?? null} />
-      <RecuerdosFeature previewUrl={pickPreview(pet, 1)} />
+      <RecuerdosFeature albumHref={albumHref} previewUrl={pickPreview(pet, 1)} />
       <HistoriaCrecimientoDuo previewUrl={pickPreview(pet, 2)} />
       <UtilityStrip />
     </main>
@@ -64,7 +67,13 @@ function Hero({
   );
 }
 
-function RecuerdosFeature({ previewUrl }: { previewUrl: string | null }) {
+function RecuerdosFeature({
+  previewUrl,
+  albumHref,
+}: {
+  previewUrl: string | null;
+  albumHref: string;
+}) {
   const { ref, visible } = useScrollReveal<HTMLElement>();
   return (
     <section
@@ -84,7 +93,7 @@ function RecuerdosFeature({ previewUrl }: { previewUrl: string | null }) {
         <p className={styles.featureBody}>
           Cada foto tiene su lugar, su página, su momento. Se pasa como un álbum físico.
         </p>
-        <Link href="/recuerdos" className={styles.featureLink}>
+        <Link href={albumHref} className={styles.featureLink}>
           Ver el álbum →
         </Link>
       </div>
