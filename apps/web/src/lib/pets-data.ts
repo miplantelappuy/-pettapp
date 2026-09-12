@@ -1,4 +1,4 @@
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
 import { getStorage } from "./storage";
 
@@ -70,4 +70,16 @@ export async function getPetHomeData(slug: string): Promise<PetHomeData | null> 
     heroMedia,
     media,
   };
+}
+
+// El token de la chapita ACTIVA de una mascota (si tiene una vinculada) —
+// con esto se arma el link real a su propio perfil de emergencia
+// (tag.BASE_DOMAIN/t/<token>, ver lib/env.ts#emergencyPath), para que desde
+// Gestionar el dueño pueda "visualizar" ese perfil sin tener que escanear la
+// chapita física. null si todavía no vinculó ninguna.
+export async function getActiveTagToken(petId: string): Promise<string | null> {
+  const tag = await db.query.qrTags.findFirst({
+    where: and(eq(schema.qrTags.petId, petId), eq(schema.qrTags.status, "active")),
+  });
+  return tag?.publicToken ?? null;
 }

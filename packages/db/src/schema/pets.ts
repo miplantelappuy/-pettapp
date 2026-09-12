@@ -74,6 +74,7 @@ export const petMilestones = pgTable("pet_milestones", {
   title: text("title").notNull(), // ej: "Llegó a casa", "Primer verano en la playa"
   occurredOn: date("occurred_on").notNull(),
   storageKey: text("storage_key").notNull(),
+  mediaType: text("media_type").notNull().default("photo"), // 'photo' | 'video' — el video se comprime igual que la portada
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

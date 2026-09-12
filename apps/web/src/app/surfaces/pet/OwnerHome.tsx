@@ -22,6 +22,9 @@ interface Props {
   vaccinationsCount?: number;
   nextVaccineDue?: string | null;
   milestones?: MilestoneRow[];
+  /** true en /preview-home: el camino de Crecimiento embebido acepta toques
+   * (agregar/ver) pero no guarda nada de verdad. */
+  demoMode?: boolean;
 }
 
 // Home del panel de dueño, versión glassmorphism: una foto/video a pantalla
@@ -39,6 +42,7 @@ export function OwnerHome({
   vaccinationsCount = 0,
   nextVaccineDue = null,
   milestones = [],
+  demoMode = false,
 }: Props) {
   const speciesLabel = SPECIES_LABEL[pet.species] ?? "compañero";
   const heroIsVideo = pet.heroMedia?.type === "video";
@@ -149,7 +153,15 @@ export function OwnerHome({
       {/* Crecimiento va directo acá abajo de todo, sin link a otra página —
           la animación de las huellas es la que pidió el dueño ver sin tener
           que "entrar" a ningún lado. */}
-      <GrowthPath petName={pet.name} species={pet.species} birthDate={pet.birthDate} milestones={milestones} manageHref={manageHref} />
+      <GrowthPath
+        petName={pet.name}
+        species={pet.species}
+        birthDate={pet.birthDate}
+        milestones={milestones}
+        manageHref={manageHref}
+        petId={pet.id}
+        demoMode={demoMode}
+      />
     </main>
   );
 }

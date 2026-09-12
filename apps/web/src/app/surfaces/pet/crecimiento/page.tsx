@@ -35,6 +35,7 @@ export default async function CrecimientoPage() {
         milestones={milestones}
         backHref={prefix || "/"}
         manageHref={`${prefix}/gestionar`}
+        petId={pet.id}
       />
     </main>
   );

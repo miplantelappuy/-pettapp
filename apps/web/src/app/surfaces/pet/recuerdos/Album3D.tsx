@@ -51,11 +51,17 @@ export function Album3D({ petName, spreads, renderSpread }: Props) {
             onClick={() => setIsOpen(true)}
             aria-label={`Abrir el álbum de ${petName}`}
           >
+            <span className={styles.coverSeal} aria-hidden>
+              🐾
+            </span>
             <span className={styles.coverTitle}>{petName}</span>
-            <span className={styles.coverSubtitle}>Álbum de recuerdos</span>
+            <span className={styles.coverRule} aria-hidden />
+            <span className={styles.coverSubtitle}>un álbum de recuerdos</span>
+            <span className={styles.coverHint}>Tocá para abrir</span>
           </button>
         ) : (
           <div className={styles.interior}>
+            <span className={styles.spine} aria-hidden />
             <div
               className={`${styles.leaf} ${turning === "next" ? styles.leafTurnNext : ""} ${
                 turning === "prev" ? styles.leafTurnPrev : ""

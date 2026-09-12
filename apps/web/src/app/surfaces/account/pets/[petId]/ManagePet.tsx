@@ -36,6 +36,13 @@ interface Props {
   /** Link de vuelta a "Tu familia" — ya viene con el prefijo correcto
    * (/app o "" según haya o no dominio propio) resuelto por quien llama. */
   accountHref?: string;
+  /** A dónde apunta "Ver panel de emergencia": el perfil REAL (tag.BASE_DOMAIN/t/<token>)
+   * si ya hay una chapita vinculada, o /preview-emergency como ejemplo si
+   * todavía no. Resuelto por quien llama (server) — ver lib/pets-data.ts#getActiveTagToken. */
+  emergencyHref?: string;
+  /** true si emergencyHref apunta al perfil real (chapita ya vinculada), para
+   * que el texto del link no prometa algo que todavía no existe. */
+  emergencyIsReal?: boolean;
 }
 
 export function ManagePet({
@@ -45,6 +52,8 @@ export function ManagePet({
   initialMilestones = [],
   demoMode = false,
   accountHref,
+  emergencyHref = "/preview-emergency",
+  emergencyIsReal = false,
 }: Props) {
   const [pet, setPet] = useState(initialPet);
   const [media, setMedia] = useState<ResolvedMedia[]>(initialPet.media);
@@ -201,14 +210,19 @@ export function ManagePet({
   }
 
   async function addMilestone(title: string, occurredOn: string, file: File) {
+    const mediaType: "photo" | "video" = file.type.startsWith("video/") ? "video" : "photo";
+
     if (demoMode) {
-      const photoUrl = URL.createObjectURL(file);
+      const mediaUrl = URL.createObjectURL(file);
       setMilestones((list) =>
-        [...list, { id: `local-${Date.now()}`, title, occurredOn, photoUrl }].sort((a, b) =>
+        [...list, { id: `local-${Date.now()}`, title, occurredOn, mediaUrl, mediaType }].sort((a, b) =>
           a.occurredOn.localeCompare(b.occurredOn),
         ),
       );
       return;
+    }
+    if (mediaType === "video" && file.size > MAX_VIDEO_BYTES) {
+      return flash("El video pesa demasiado (máx. 300MB). Probá con un clip más corto.");
     }
     setSavingMilestone(true);
     try {
@@ -220,9 +234,10 @@ export function ManagePet({
       const body = await res.json().catch(() => null);
       if (!res.ok) return flash(body?.error ?? "No se pudo guardar el hito");
       setMilestones((list) =>
-        [...list, { id: body.id, title: body.title, occurredOn: body.occurredOn, photoUrl: body.photoUrl }].sort(
-          (a, b) => a.occurredOn.localeCompare(b.occurredOn),
-        ),
+        [
+          ...list,
+          { id: body.id, title: body.title, occurredOn: body.occurredOn, mediaUrl: body.mediaUrl, mediaType: body.mediaType },
+        ].sort((a, b) => a.occurredOn.localeCompare(b.occurredOn)),
       );
       flash("Hito agregado al camino");
     } finally {
@@ -331,6 +346,9 @@ export function ManagePet({
           onSave={(name, phone) => patchPet({ emergencyContactName: name || null, emergencyContactPhone: phone || null })}
           saving={saving}
         />
+        <a href={emergencyHref} target="_blank" rel="noreferrer" className={styles.panelLink}>
+          {emergencyIsReal ? `Ver el panel de emergencia de ${pet.name} →` : "Ver un ejemplo (todavía no vinculaste una chapita) →"}
+        </a>
       </section>
 
       {/* ── Vacunas ── */}
@@ -358,13 +376,18 @@ export function ManagePet({
         <h2 className={styles.sectionTitle}>Crecimiento</h2>
         <p className={styles.hint}>
           Los momentos importantes de la vida de {pet.name} — arman el camino que se ve en el Home, desde que llegó a
-          la familia hasta hoy. Cada uno lleva una foto, una fecha y un título corto.
+          la familia hasta hoy. Cada uno lleva una foto o video, una fecha y un título corto. También podés agregarlos
+          directamente tocando una burbuja vacía en el camino, sin pasar por acá.
         </p>
         <ul className={styles.vaccineList}>
           {milestones.map((m) => (
             <li key={m.id} className={styles.vaccineRow}>
               <span className={styles.milestoneInfo}>
-                <img className={styles.milestoneThumb} src={m.photoUrl} alt="" />
+                {m.mediaType === "video" ? (
+                  <video className={styles.milestoneThumb} src={m.mediaUrl} muted loop autoPlay playsInline />
+                ) : (
+                  <img className={styles.milestoneThumb} src={m.mediaUrl} alt="" />
+                )}
                 <span>
                   <strong>{m.title}</strong> — {m.occurredOn}
                 </span>
@@ -464,7 +487,7 @@ function MilestoneForm({
     >
       <input placeholder="Título (ej: Llegó a casa)" value={title} onChange={(e) => setTitle(e.target.value)} />
       <input type="date" value={occurredOn} onChange={(e) => setOccurredOn(e.target.value)} />
-      <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+      <input type="file" accept="image/*,video/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
       <button type="submit" disabled={saving || !title || !occurredOn || !file}>
         {saving ? "Guardando…" : "Agregar"}
       </button>

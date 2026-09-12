@@ -6,11 +6,12 @@ export interface MilestoneRow {
   id: string;
   title: string;
   occurredOn: string;
-  photoUrl: string;
+  mediaUrl: string;
+  mediaType: "photo" | "video";
 }
 
-// Igual que getPetHomeData en pets-data.ts: acá se resuelve la URL de la
-// foto (firmada en R2, o el endpoint local en dev) para que a quien llama
+// Igual que getPetHomeData en pets-data.ts: acá se resuelve la URL del
+// archivo (firmada en R2, o el endpoint local en dev) para que a quien llama
 // nunca le importe cómo se guardan los archivos.
 export async function getMilestones(petId: string): Promise<MilestoneRow[]> {
   const rows = await db.query.petMilestones.findMany({
@@ -24,7 +25,8 @@ export async function getMilestones(petId: string): Promise<MilestoneRow[]> {
       id: r.id,
       title: r.title,
       occurredOn: r.occurredOn,
-      photoUrl: await storage.getReadUrl(r.storageKey),
+      mediaUrl: await storage.getReadUrl(r.storageKey),
+      mediaType: (r.mediaType as "photo" | "video") ?? "photo",
     })),
   );
 }

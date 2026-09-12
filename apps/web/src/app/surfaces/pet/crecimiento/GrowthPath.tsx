@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import Link from "next/link";
 import type { MilestoneRow } from "@/lib/milestones-data";
 import styles from "./GrowthPath.module.css";
@@ -9,8 +9,11 @@ interface PathNode {
   key: string;
   title: string;
   date: string;
-  photoUrl: string | null;
-  kind: "birth" | "milestone" | "today";
+  mediaUrl: string | null;
+  mediaType: "photo" | "video";
+  kind: "birth" | "milestone" | "empty" | "today";
+  /** Solo en kind "milestone": el id real, para poder borrarlo. */
+  milestoneId?: string;
 }
 
 interface Props {
@@ -21,8 +24,14 @@ interface Props {
   /** Si se pasa, muestra el link "← Volver" arriba (uso en /crecimiento como
    * página propia). Si se omite, no lo muestra (uso embebido en el Home). */
   backHref?: string;
-  /** A Gestionar, para cargar el primer hito desde el estado vacío. */
+  /** A Gestionar, para el link del estado vacío. */
   manageHref: string;
+  /** Necesario para poder agregar/borrar hitos tocando el camino directamente
+   * (no solo desde Gestionar). */
+  petId: string;
+  /** true en las vistas previas (/preview-home, /preview-crecimiento): todo
+   * pasa en memoria, nada se guarda de verdad. */
+  demoMode?: boolean;
 }
 
 const PAWS_PER_SEGMENT = 6;
@@ -30,6 +39,11 @@ const PAWS_PER_SEGMENT = 6;
 // fracción de progreso total del camino (0 a 1) — más chico = el agrandado
 // dura menos scroll.
 const BUMP_WINDOW = 0.05;
+// Cuántas burbujas vacías ("tocá para sumar un recuerdo") se muestran
+// siempre después del último hito real — así el camino se ve "prearmado"
+// como un mapa de niveles, en vez de terminar de golpe apenas se cargó algo.
+const EMPTY_SLOTS = 3;
+const MAX_VIDEO_BYTES = 300 * 1024 * 1024;
 
 function formatDate(iso: string): string {
   const d = new Date(`${iso}T00:00:00`);
@@ -83,26 +97,86 @@ function cubicPoint(p0: { x: number; y: number }, p1: { x: number; y: number }, 
 
 // El "mapa de niveles" tipo Candy Crush: un camino que serpentea de
 // izquierda a derecha, con una burbuja por cada hito de vida (más un inicio
-// automático en el nacimiento y un final fijo en "Hoy"), y huellas entre
-// medio que se van revelando a medida que se scrollea — como si fueran los
-// pasos que dio la mascota para llegar hasta ahí. Un solo cálculo de
-// "progreso de scroll" maneja tanto las huellas como la aparición de cada
-// burbuja: es EL momento de animación de esta pantalla (ver guía de diseño:
-// mejor un efecto orquestado que muchos sueltos).
-export function GrowthPath({ petName, species, birthDate, milestones, backHref, manageHref }: Props) {
+// automático en el nacimiento, unas paradas vacías que invitan a seguir
+// cargando, y un final fijo en "Hoy"), y huellas entre medio que se van
+// revelando a medida que se scrollea. Las burbujas son interactivas: tocar
+// una vacía abre el formulario para cargarle una foto o video ahí mismo;
+// tocar una ya cargada la muestra en grande.
+export function GrowthPath({ petName, species, birthDate, milestones: initialMilestones, backHref, manageHref, petId, demoMode = false }: Props) {
+  const [milestones, setMilestones] = useState<MilestoneRow[]>(initialMilestones);
+  const [saving, setSaving] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [lightboxKey, setLightboxKey] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function addMilestone(title: string, occurredOn: string, file: File) {
+    const mediaType: "photo" | "video" = file.type.startsWith("video/") ? "video" : "photo";
+
+    if (demoMode) {
+      const mediaUrl = URL.createObjectURL(file);
+      setMilestones((list) =>
+        [...list, { id: `local-${Date.now()}`, title, occurredOn, mediaUrl, mediaType }].sort((a, b) =>
+          a.occurredOn.localeCompare(b.occurredOn),
+        ),
+      );
+      setUploadOpen(false);
+      return;
+    }
+
+    if (mediaType === "video" && file.size > MAX_VIDEO_BYTES) {
+      setError("El video pesa demasiado (máx. 300MB). Probá con un clip más corto.");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    try {
+      const form = new FormData();
+      form.append("title", title);
+      form.append("occurredOn", occurredOn);
+      form.append("file", file);
+      const res = await fetch(`/api/pets/${petId}/milestones`, { method: "POST", body: form });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(body?.error ?? "No se pudo guardar el hito");
+        return;
+      }
+      setMilestones((list) =>
+        [
+          ...list,
+          { id: body.id, title: body.title, occurredOn: body.occurredOn, mediaUrl: body.mediaUrl, mediaType: body.mediaType },
+        ].sort((a, b) => a.occurredOn.localeCompare(b.occurredOn)),
+      );
+      setUploadOpen(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeMilestone(id: string) {
+    setMilestones((list) => list.filter((m) => m.id !== id));
+    setLightboxKey(null);
+    if (demoMode || id.startsWith("local-")) return;
+    await fetch(`/api/pets/milestones/${id}`, { method: "DELETE" });
+  }
+
   const nodes = useMemo<PathNode[]>(() => {
     const list: PathNode[] = [];
     if (birthDate) {
-      list.push({ key: "birth", title: `Nacimiento de ${petName}`, date: birthDate, photoUrl: null, kind: "birth" });
+      list.push({ key: "birth", title: `Nacimiento de ${petName}`, date: birthDate, mediaUrl: null, mediaType: "photo", kind: "birth" });
     }
     for (const m of milestones) {
-      list.push({ key: m.id, title: m.title, date: m.occurredOn, photoUrl: m.photoUrl, kind: "milestone" });
+      list.push({ key: m.id, title: m.title, date: m.occurredOn, mediaUrl: m.mediaUrl, mediaType: m.mediaType, kind: "milestone", milestoneId: m.id });
+    }
+    for (let i = 0; i < EMPTY_SLOTS; i++) {
+      list.push({ key: `empty-${i}`, title: "Agregar recuerdo", date: "", mediaUrl: null, mediaType: "photo", kind: "empty" });
     }
     list.push({
       key: "today",
       title: "Hoy",
       date: new Date().toISOString().slice(0, 10),
-      photoUrl: null,
+      mediaUrl: null,
+      mediaType: "photo",
       kind: "today",
     });
     return list;
@@ -125,9 +199,6 @@ export function GrowthPath({ petName, species, birthDate, milestones, backHref, 
       const midY = (prev.y + curr.y) / 2;
       const c1 = { x: prev.x, y: midY };
       const c2 = { x: curr.x, y: midY };
-      // Ángulo aproximado del tramo (una sola vez por tramo, no punto a
-      // punto): alcanza para que las huellas se sientan orientadas sin
-      // tener que medir el contenedor en píxeles.
       const angleDeg = (Math.atan2(curr.y - prev.y, curr.x - prev.x) * 180) / Math.PI;
       for (let k = 1; k <= PAWS_PER_SEGMENT; k++) {
         const t = k / (PAWS_PER_SEGMENT + 1);
@@ -179,6 +250,21 @@ export function GrowthPath({ petName, species, birthDate, milestones, backHref, 
     };
   }, []);
 
+  // Esc cierra lo que esté abierto (modal de carga o visor grande).
+  useEffect(() => {
+    if (!uploadOpen && !lightboxKey) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setUploadOpen(false);
+        setLightboxKey(null);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [uploadOpen, lightboxKey]);
+
+  const lightboxNode = nodes.find((n) => n.key === lightboxKey) ?? null;
+
   return (
     <section className={styles.page}>
       {backHref && (
@@ -187,69 +273,174 @@ export function GrowthPath({ petName, species, birthDate, milestones, backHref, 
         </Link>
       )}
       <h2 className={styles.title}>El camino de {petName}</h2>
-      <p className={styles.lead}>Las huellas que dejó desde que llegó a la familia hasta hoy.</p>
+      <p className={styles.lead}>
+        Las huellas que dejó desde que llegó a la familia hasta hoy. Tocá una burbuja vacía para sumar un recuerdo, o
+        una ya cargada para verla en grande.
+      </p>
 
-      {milestones.length === 0 ? (
-        <div className={`${styles.empty} glass`}>
-          <p>Todavía no cargaste hitos para este camino.</p>
-          <Link href={manageHref} className={styles.emptyLink}>
-            Agregar el primero desde Gestionar →
-          </Link>
-        </div>
-      ) : (
-        <div ref={containerRef} className={styles.path} style={{ height: `${nodes.length * 16}rem` }}>
-          {paws.map((paw) => {
-            const revealed = progress >= paw.yFraction - 0.015;
-            const style = {
-              left: `calc(${paw.x}% + ${paw.side * 1.6}%)`,
-              top: `${(paw.y / nodes.length) * 100}%`,
-              ["--paw-angle" as string]: `${paw.angleDeg + 90}deg`,
-            } as CSSProperties;
-            return (
-              <PawIcon
-                key={paw.key}
-                species={species}
-                className={`${styles.paw} ${revealed ? styles.pawVisible : ""}`}
-                style={style}
-              />
-            );
-          })}
+      <div ref={containerRef} className={styles.path} style={{ height: `${nodes.length * 16}rem` }}>
+        {paws.map((paw) => {
+          const revealed = progress >= paw.yFraction - 0.015;
+          const style = {
+            left: `calc(${paw.x}% + ${paw.side * 1.6}%)`,
+            top: `${(paw.y / nodes.length) * 100}%`,
+            ["--paw-angle" as string]: `${paw.angleDeg + 90}deg`,
+          } as CSSProperties;
+          return (
+            <PawIcon
+              key={paw.key}
+              species={species}
+              className={`${styles.paw} ${revealed ? styles.pawVisible : ""}`}
+              style={style}
+            />
+          );
+        })}
 
-          {nodes.map((node, i) => {
-            const yFraction = (i + 0.5) / nodes.length;
-            const revealed = progress >= yFraction - 0.04;
-            // Cuando el scroll "llega" a este punto del camino, la burbuja
-            // se agranda un poco y vuelve a su tamaño normal al seguir
-            // scrolleando — cuanto más cerca está el progreso de este nodo,
-            // más grande, con una caída suave a los costados en vez de un
-            // salto brusco.
-            const distanceToNode = Math.abs(progress - yFraction);
-            const arrivalBump = Math.max(0, 1 - distanceToNode / BUMP_WINDOW);
-            const scale = revealed ? 1 + arrivalBump * 0.35 : 0.7;
-            return (
-              <div
-                key={node.key}
-                className={`${styles.node} ${revealed ? styles.nodeVisible : ""} ${styles[`kind_${node.kind}`]}`}
-                style={{
-                  left: `${points[i].x}%`,
-                  top: `${(points[i].y / nodes.length) * 100}%`,
-                  transform: `translate(-50%, -50%) scale(${scale})`,
+        {nodes.map((node, i) => {
+          const yFraction = (i + 0.5) / nodes.length;
+          const revealed = progress >= yFraction - 0.04;
+          // Cuando el scroll "llega" a este punto del camino, la burbuja
+          // se agranda un poco y vuelve a su tamaño normal al seguir
+          // scrolleando — cuanto más cerca está el progreso de este nodo,
+          // más grande, con una caída suave a los costados en vez de un
+          // salto brusco.
+          const distanceToNode = Math.abs(progress - yFraction);
+          const arrivalBump = Math.max(0, 1 - distanceToNode / BUMP_WINDOW);
+          const scale = revealed ? 1 + arrivalBump * 0.35 : 0.7;
+          const tappable = node.kind === "empty" || node.kind === "milestone";
+          return (
+            <div
+              key={node.key}
+              className={`${styles.node} ${revealed ? styles.nodeVisible : ""} ${styles[`kind_${node.kind}`]}`}
+              style={{
+                left: `${points[i].x}%`,
+                top: `${(points[i].y / nodes.length) * 100}%`,
+                transform: `translate(-50%, -50%) scale(${scale})`,
+              }}
+            >
+              <button
+                type="button"
+                className={styles.bubble}
+                disabled={!tappable}
+                aria-label={node.kind === "empty" ? "Agregar un recuerdo acá" : node.title}
+                onClick={() => {
+                  if (node.kind === "empty") {
+                    setError(null);
+                    setUploadOpen(true);
+                  } else if (node.kind === "milestone") {
+                    setLightboxKey(node.key);
+                  }
                 }}
               >
-                <div className={styles.bubble}>
-                  {node.photoUrl ? (
-                    <img src={node.photoUrl} alt="" />
+                {node.kind === "empty" ? (
+                  <span className={styles.bubbleAdd}>+</span>
+                ) : node.mediaUrl ? (
+                  node.mediaType === "video" ? (
+                    <video src={node.mediaUrl} muted loop autoPlay playsInline />
                   ) : (
-                    <span className={styles.bubbleIcon}>{node.kind === "today" ? "🏁" : "🐾"}</span>
-                  )}
-                </div>
-                <span className={styles.nodeTitle}>{node.title}</span>
-                <span className={styles.nodeDate}>{formatDate(node.date)}</span>
-              </div>
-            );
-          })}
-        </div>
+                    <img src={node.mediaUrl} alt="" />
+                  )
+                ) : (
+                  <span className={styles.bubbleIcon}>{node.kind === "today" ? "🏁" : "🐾"}</span>
+                )}
+              </button>
+              <span className={styles.nodeTitle}>{node.title}</span>
+              {node.kind !== "empty" && <span className={styles.nodeDate}>{formatDate(node.date)}</span>}
+            </div>
+          );
+        })}
+      </div>
+
+      {milestones.length === 0 && (
+        <p className={styles.emptyHint}>
+          También podés cargarlos todos juntos desde{" "}
+          <Link href={manageHref} className={styles.emptyLink}>
+            Gestionar
+          </Link>
+          .
+        </p>
+      )}
+
+      {uploadOpen && (
+        <UploadModal onClose={() => setUploadOpen(false)} onAdd={addMilestone} saving={saving} error={error} />
+      )}
+
+      {lightboxNode && (
+        <Lightbox
+          node={lightboxNode}
+          onClose={() => setLightboxKey(null)}
+          onDelete={lightboxNode.milestoneId ? () => removeMilestone(lightboxNode.milestoneId as string) : undefined}
+        />
       )}
     </section>
+  );
+}
+
+function UploadModal({
+  onClose,
+  onAdd,
+  saving,
+  error,
+}: {
+  onClose: () => void;
+  onAdd: (title: string, occurredOn: string, file: File) => void;
+  saving: boolean;
+  error: string | null;
+}) {
+  const [title, setTitle] = useState("");
+  const [occurredOn, setOccurredOn] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!title || !occurredOn || !file) return;
+    onAdd(title, occurredOn, file);
+  }
+
+  return (
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={`${styles.modal} glassStrong`} onClick={(e) => e.stopPropagation()}>
+        <button type="button" className={styles.modalClose} onClick={onClose} aria-label="Cerrar">
+          ✕
+        </button>
+        <h3 className={styles.modalTitle}>Sumar un recuerdo</h3>
+        <p className={styles.modalHint}>Una foto o video, con su fecha y un título corto.</p>
+        <form className={styles.modalForm} onSubmit={handleSubmit}>
+          <input placeholder="Título (ej: Llegó a casa)" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <input type="date" value={occurredOn} onChange={(e) => setOccurredOn(e.target.value)} />
+          <input type="file" accept="image/*,video/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          {error && <p className={styles.modalError}>{error}</p>}
+          <button type="submit" disabled={saving || !title || !occurredOn || !file}>
+            {saving ? "Guardando…" : "Agregar al camino"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function Lightbox({ node, onClose, onDelete }: { node: PathNode; onClose: () => void; onDelete?: () => void }) {
+  return (
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.lightbox} onClick={(e) => e.stopPropagation()}>
+        <button type="button" className={styles.modalClose} onClick={onClose} aria-label="Cerrar">
+          ✕
+        </button>
+        {node.mediaUrl && node.mediaType === "video" ? (
+          <video src={node.mediaUrl} className={styles.lightboxMedia} controls autoPlay muted playsInline />
+        ) : node.mediaUrl ? (
+          <img src={node.mediaUrl} alt="" className={styles.lightboxMedia} />
+        ) : null}
+        <div className={styles.lightboxCaption}>
+          <span className={styles.lightboxTitle}>{node.title}</span>
+          <span className={styles.lightboxDate}>{formatDate(node.date)}</span>
+        </div>
+        {onDelete && (
+          <button type="button" className={styles.lightboxDelete} onClick={onDelete}>
+            Eliminar este hito
+          </button>
+        )}
+      </div>
+    </div>
   );
 }

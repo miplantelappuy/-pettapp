@@ -2,75 +2,178 @@
   position: relative;
   width: 100%;
   height: 100%;
-  background: var(--color-ink);
+  background: var(--album-paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
-.full img {
+/* El número de página, pero tratado como un elemento gráfico grande en vez
+   de una etiqueta chica en una esquina — el "un solo lugar donde nos
+   jugamos" de esta pantalla, apoyado además en algo que la página SÍ es
+   (una secuencia), no un adorno inventado. */
+.folio {
+  position: absolute;
+  right: 3%;
+  bottom: -6%;
+  font-family: var(--font-album-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: clamp(6rem, 22vw, 11rem);
+  line-height: 1;
+  color: var(--album-brass);
+  opacity: 0.18;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.print {
+  position: relative;
+  z-index: 1;
   width: 100%;
-  height: 100%;
+  background: var(--album-paper-light);
+  padding: 0.6rem 0.6rem 1.7rem;
+  box-shadow: 0 18px 40px rgba(43, 32, 19, 0.28);
+  border: 1px solid rgba(184, 130, 61, 0.3);
+  transform: rotate(var(--tilt, 0deg));
+}
+
+.print::before,
+.print::after {
+  content: "";
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  pointer-events: none;
+}
+
+.print::before {
+  top: 5px;
+  left: 5px;
+  border-top: 2px solid var(--album-brass);
+  border-left: 2px solid var(--album-brass);
+  opacity: 0.65;
+}
+
+.print::after {
+  bottom: 20px;
+  right: 5px;
+  border-bottom: 2px solid var(--album-brass);
+  border-right: 2px solid var(--album-brass);
+  opacity: 0.65;
+}
+
+.print img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 46vh;
   object-fit: cover;
 }
 
-.caption {
+.printBig {
+  width: min(72%, 400px);
+}
+
+/* Collages: en vez de una grilla pareja, cada foto es una impresión suelta
+   apoyada sobre la mesa (papel crema), un poco torcida y superpuesta a la
+   siguiente — como quedarían de verdad si alguien las hubiera dejado ahí. */
+.table {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--album-paper);
+  overflow: hidden;
+}
+
+.slot {
   position: absolute;
-  left: 1.25rem;
-  bottom: 1.25rem;
-  right: 1.25rem;
-  color: var(--album-paper-light);
+}
+
+.slot2a {
+  left: 6%;
+  top: 15%;
+  width: 55%;
+  z-index: 2;
+}
+
+.slot2b {
+  left: 49%;
+  top: 44%;
+  width: 45%;
+  z-index: 3;
+}
+
+.slot3a {
+  left: 5%;
+  top: 9%;
+  width: 45%;
+  z-index: 1;
+}
+
+.slot3b {
+  left: 46%;
+  top: 5%;
+  width: 42%;
+  z-index: 2;
+}
+
+.slot3c {
+  left: 26%;
+  top: 50%;
+  width: 45%;
+  z-index: 3;
+}
+
+/* Contratapa: un cierre cálido en vez de terminar de golpe en la última
+   foto — mismo lenguaje (papel, bronce, Fraunces itálica) que la tapa. */
+.closing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: var(--album-paper);
+  text-align: center;
+  padding: 2rem;
+}
+
+.closingSeal {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+  filter: sepia(0.4) saturate(1.4);
+}
+
+.closingLine {
   font-family: var(--font-album-display);
-  font-size: 1.1rem;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+  font-style: italic;
+  font-weight: 600;
+  font-size: clamp(1.35rem, 5vw, 1.9rem);
+  color: var(--album-ink);
   margin: 0;
 }
 
-.collage2 {
-  display: grid;
-  grid-template-columns: 62% 38%;
-  gap: 4px;
-  width: 100%;
-  height: 100%;
-  background: var(--album-paper);
+.closingRule {
+  width: 3rem;
+  height: 1px;
+  background: var(--album-brass);
+  margin: 1.1rem 0;
 }
 
-.collage2Large,
-.collage2Small {
-  overflow: hidden;
+.closingSub {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--album-ink-dim);
+  margin: 0;
 }
 
-.collage2Large img,
-.collage2Small img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.collage3 {
-  display: grid;
-  grid-template-columns: 60% 40%;
-  gap: 4px;
-  width: 100%;
-  height: 100%;
-  background: var(--album-paper);
-}
-
-.collage3Main {
-  overflow: hidden;
-}
-
-.collage3Main img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.collage3Side {
-  display: grid;
-  grid-template-rows: 1fr 1fr;
-  gap: 4px;
-}
-
-.collage3Side img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+@media (min-width: 640px) {
+  .slot2a {
+    top: 10%;
+  }
+  .slot2b {
+    top: 38%;
+  }
 }

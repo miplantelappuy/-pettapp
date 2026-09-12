@@ -2,10 +2,11 @@ import { headers } from "next/headers";
 import { eq, and } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
 import { auth } from "@/lib/auth";
-import { getPetHomeData } from "@/lib/pets-data";
+import { getPetHomeData, getActiveTagToken } from "@/lib/pets-data";
 import { getVaccinations } from "@/lib/vaccinations-data";
 import { getMilestones } from "@/lib/milestones-data";
 import { getSurfacePrefix } from "@/lib/surface-prefix";
+import { emergencyPath } from "@/lib/env";
 import { ManagePet } from "./ManagePet";
 
 export default async function ManagePetPage({ params }: { params: Promise<{ petId: string }> }) {
@@ -47,6 +48,7 @@ export default async function ManagePetPage({ params }: { params: Promise<{ petI
   const vaccinations = await getVaccinations(petId);
   const milestones = await getMilestones(petId);
   const prefix = await getSurfacePrefix(); // "" con dominio propio, "/app" hoy sin uno
+  const activeToken = await getActiveTagToken(petId);
 
   return (
     <ManagePet
@@ -55,6 +57,8 @@ export default async function ManagePetPage({ params }: { params: Promise<{ petI
       initialVaccinations={vaccinations}
       initialMilestones={milestones}
       accountHref={prefix || "/"}
+      emergencyHref={activeToken ? emergencyPath(activeToken) : "/preview-emergency"}
+      emergencyIsReal={Boolean(activeToken)}
     />
   );
 }

@@ -29,16 +29,15 @@
   margin: 0 0 2rem;
 }
 
-.empty {
-  padding: 2rem 1.5rem;
+.emptyHint {
   text-align: center;
   font-family: var(--font-body);
+  font-size: 0.85rem;
   color: var(--color-cloud-dim);
+  margin-top: 1rem;
 }
 
 .emptyLink {
-  display: inline-block;
-  margin-top: 0.75rem;
   font-weight: 600;
   color: var(--color-accent);
   text-decoration: none;
@@ -86,6 +85,8 @@
 }
 
 .bubble {
+  appearance: none;
+  -webkit-appearance: none;
   width: 5rem;
   height: 5rem;
   border-radius: 50%;
@@ -96,9 +97,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
 }
 
-.bubble img {
+.bubble:not(:disabled):hover,
+.bubble:not(:disabled):focus-visible {
+  transform: scale(1.06);
+}
+
+.bubble:disabled {
+  cursor: default;
+}
+
+.bubble img,
+.bubble video {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -106,6 +122,13 @@
 
 .bubbleIcon {
   font-size: 1.8rem;
+}
+
+.bubbleAdd {
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--color-cloud-dim);
+  line-height: 1;
 }
 
 .kind_birth .bubble {
@@ -117,6 +140,12 @@
   background: linear-gradient(135deg, var(--color-accent), #ff6f8f);
 }
 
+.kind_empty .bubble {
+  border-style: dashed;
+  border-color: var(--glass-border-strong);
+  background: var(--glass-bg-soft);
+}
+
 .nodeTitle {
   font-family: var(--font-display);
   font-weight: 600;
@@ -125,10 +154,162 @@
   line-height: 1.2;
 }
 
+.kind_empty .nodeTitle {
+  color: var(--color-cloud-dim);
+  font-weight: 500;
+}
+
 .nodeDate {
   font-family: var(--font-body);
   font-size: 0.7rem;
   color: var(--color-cloud-dim);
+}
+
+/* ── Modal (subir) y visor grande ── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 16, 31, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 100;
+}
+
+.modal {
+  position: relative;
+  width: min(92vw, 420px);
+  padding: 1.75rem 1.5rem 1.5rem;
+  border-radius: var(--radius-md);
+}
+
+.modalClose {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: none;
+  background: var(--glass-bg);
+  color: var(--color-cloud);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.modalTitle {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.3rem;
+  margin: 0 0 0.25rem;
+  color: var(--color-cloud);
+}
+
+.modalHint {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--color-cloud-dim);
+  margin: 0 0 1.1rem;
+}
+
+.modalForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.modalForm input {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg-soft);
+  color: var(--color-cloud);
+}
+
+.modalForm button {
+  margin-top: 0.4rem;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.65rem 1.1rem;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: linear-gradient(135deg, var(--color-accent), #ff6f8f);
+  color: var(--color-accent-ink);
+  cursor: pointer;
+}
+
+.modalForm button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.modalError {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--color-accent);
+}
+
+.lightbox {
+  position: relative;
+  width: min(92vw, 480px);
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  border: 1px solid var(--glass-border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--glass-shadow);
+  overflow: hidden;
+}
+
+.lightboxMedia {
+  display: block;
+  width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  background: var(--color-ink);
+}
+
+.lightboxCaption {
+  padding: 1rem 1.25rem 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.lightboxTitle {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--color-cloud);
+}
+
+.lightboxDate {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--color-cloud-dim);
+}
+
+.lightboxDelete {
+  display: block;
+  width: calc(100% - 2.5rem);
+  margin: 0.9rem 1.25rem 1.25rem;
+  padding: 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--glass-border-strong);
+  background: transparent;
+  color: var(--color-accent);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 @media (min-width: 640px) {

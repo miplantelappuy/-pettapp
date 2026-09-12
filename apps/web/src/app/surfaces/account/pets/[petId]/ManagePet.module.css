@@ -253,3 +253,15 @@
   object-fit: cover;
   flex-shrink: 0;
 }
+
+/* Link "ver panel de emergencia" */
+
+.panelLink {
+  display: inline-block;
+  margin-top: 0.85rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: none;
+}

@@ -1,8 +1,9 @@
 import { headers } from "next/headers";
-import { getPetHomeData } from "@/lib/pets-data";
+import { getPetHomeData, getActiveTagToken } from "@/lib/pets-data";
 import { getVaccinations } from "@/lib/vaccinations-data";
 import { getMilestones } from "@/lib/milestones-data";
 import { getSurfacePrefix } from "@/lib/surface-prefix";
+import { emergencyPath } from "@/lib/env";
 import { hasPetAccess } from "@/lib/pin";
 import { PetPinGate } from "../PetPinGate";
 import { ManagePet } from "../../account/pets/[petId]/ManagePet";
@@ -30,6 +31,7 @@ export default async function GestionarPage() {
 
   const vaccinations = await getVaccinations(pet.id);
   const milestones = await getMilestones(pet.id);
+  const activeToken = await getActiveTagToken(pet.id);
 
   return (
     <ManagePet
@@ -38,6 +40,8 @@ export default async function GestionarPage() {
       initialVaccinations={vaccinations}
       initialMilestones={milestones}
       accountHref={prefix || "/"}
+      emergencyHref={activeToken ? emergencyPath(activeToken) : "/preview-emergency"}
+      emergencyIsReal={Boolean(activeToken)}
     />
   );
 }
