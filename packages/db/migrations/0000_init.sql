@@ -20,6 +20,9 @@ CREATE TABLE session (
   expires_at timestamptz NOT NULL,
   ip_address text,
   user_agent text,
+  -- FK real a organization(id) se agrega más abajo (ALTER TABLE), porque
+  -- organization todavía no existe en este punto del archivo.
+  active_organization_id text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -55,6 +58,8 @@ CREATE TABLE organization (
   id text PRIMARY KEY,
   name text NOT NULL,
   slug text UNIQUE,
+  logo text,
+  metadata text,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
@@ -65,6 +70,23 @@ CREATE TABLE member (
   role text NOT NULL DEFAULT 'owner',
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- Invitaciones a un hogar existente. La requiere el plugin `organization`
+-- de Better Auth ya activado (no es una función de Fase 1 adelantada).
+CREATE TABLE invitation (
+  id text PRIMARY KEY,
+  organization_id text NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
+  email text NOT NULL,
+  role text,
+  status text NOT NULL DEFAULT 'pending',
+  expires_at timestamptz NOT NULL,
+  inviter_id text NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE session
+  ADD CONSTRAINT session_active_organization_id_fkey
+  FOREIGN KEY (active_organization_id) REFERENCES organization(id) ON DELETE SET NULL;
 
 -- ── Planes y suscripción (sin cobro real todavía) ────────────────────
 CREATE TABLE plans (

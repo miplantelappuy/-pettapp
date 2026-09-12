@@ -33,9 +33,13 @@ export async function POST(request: NextRequest) {
   const orgs = await auth.api.listOrganizations({ headers: request.headers });
   let organizationId = orgs?.[0]?.id;
   if (!organizationId) {
+    // Better Auth exige `slug` además de `name` al crear una organización.
+    // No lo usamos para nada visible (las mascotas rutean por su propio
+    // `slug`, no por el de la organización) — es solo un identificador
+    // interno único, por eso un UUID alcanza.
     const created = await auth.api.createOrganization({
       headers: request.headers,
-      body: { name: "Mi familia" },
+      body: { name: "Mi familia", slug: randomUUID() },
     });
     organizationId = created.id;
   }

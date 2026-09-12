@@ -33,6 +33,12 @@ export const session = pgTable("session", {
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
+  // Requerida por el plugin `organization`: qué hogar está "activo" en esta
+  // sesión. La agregamos acá arriba (declarada antes que `organization` en
+  // este archivo) por eso la FK real vive en la migración SQL como
+  // ALTER TABLE separado, no inline — mismo patrón que ya usamos para
+  // pets.icon_media_id.
+  activeOrganizationId: text("active_organization_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -40,7 +46,13 @@ export const session = pgTable("session", {
 // Identidad vinculada (email+password si algún día lo usamos, Google, Apple...).
 // Esto es lo que hace posible el account linking: varias filas de "account"
 // pueden apuntar al mismo user.id.
-export const authAccount = pgTable("account", {
+// OJO: el nombre de este export (`account`, no `authAccount`) importa de
+// verdad — el adaptador de Drizzle de Better Auth busca `schema.account`
+// por ese nombre exacto para saber dónde guardar identidades vinculadas.
+// Renombrarlo rompe silenciosamente esa detección (lo aprendimos corriendo
+// el build real: tiraba "missing table: account" aunque la tabla sí
+// existiera, porque buscaba la clave del objeto JS, no el nombre SQL).
+export const account = pgTable("account", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   accountId: text("account_id").notNull(),
@@ -73,6 +85,11 @@ export const organization = pgTable("organization", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").unique(),
+  logo: text("logo"),
+  // Better Auth guarda acá metadata arbitraria de la organización como
+  // JSON serializado a texto (no jsonb) — así es como lo espera su
+  // adaptador de Drizzle por defecto.
+  metadata: text("metadata"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -81,5 +98,20 @@ export const member = pgTable("member", {
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   role: text("role").notNull().default("owner"), // owner | member (co-responsable)
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Invitaciones a un hogar existente — tabla que el plugin `organization`
+// necesita aunque Fase 0 no exponga todavía una pantalla para usarla (no es
+// una función nueva que estemos adelantando de Fase 1: es parte del schema
+// mínimo que el plugin ya activado requiere para funcionar sin romperse).
+export const invitation = pgTable("invitation", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  role: text("role"),
+  status: text("status").notNull().default("pending"),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  inviterId: text("inviter_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
