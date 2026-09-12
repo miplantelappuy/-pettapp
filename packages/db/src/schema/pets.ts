@@ -1,0 +1,90 @@
+import {
+  pgTable,
+  text,
+  boolean,
+  integer,
+  numeric,
+  date,
+  timestamp,
+  uniqueIndex,
+  AnyPgColumn,
+} from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { organization, user } from "./auth";
+
+export const pets = pgTable("pets", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  slug: text("slug").notNull().unique(), // define el subdominio {slug}.BASE_DOMAIN
+  name: text("name").notNull(),
+  species: text("species").notNull(), // 'dog' | 'cat' | 'other'
+  breed: text("breed"),
+  sex: text("sex"), // 'male' | 'female' | 'unknown'
+  birthDate: date("birth_date"),
+  birthDatePrecision: text("birth_date_precision").notNull().default("exact"), // exact | month | year
+  bioPhrase: text("bio_phrase"),
+  templateId: text("template_id").notNull().default("cinematic"), // arquitectura lista; plantillas reales son Fase 1+
+  // FK a pet_media declarada más abajo para evitar dependencia circular en la definición.
+  iconMediaId: text("icon_media_id"),
+  microchipNumber: text("microchip_number"),
+  lostMode: boolean("lost_mode").notNull().default(false),
+  lostModeActivatedAt: timestamp("lost_mode_activated_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const petMedia = pgTable("pet_media", {
+  id: text("id").primaryKey(),
+  petId: text("pet_id").notNull().references((): AnyPgColumn => pets.id, { onDelete: "cascade" }),
+  type: text("type").notNull(), // 'photo' | 'video'
+  storageKey: text("storage_key").notNull(),
+  thumbKey: text("thumb_key"),
+  width: integer("width"),
+  height: integer("height"),
+  durationS: numeric("duration_s"),
+  takenAt: timestamp("taken_at", { withTimezone: true }),
+  caption: text("caption"),
+  orderIndex: integer("order_index").notNull().default(0),
+  isProfileHero: boolean("is_profile_hero").notNull().default(false),
+  createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Chapitas QR. Diseñadas para reemplazo: una mascota puede tener varias a lo
+// largo de su vida, y la relación histórica nunca se borra.
+export const qrTags = pgTable(
+  "qr_tags",
+  {
+    id: text("id").primaryKey(),
+    publicCode: text("public_code").notNull().unique(), // PET-000123, para impresión/soporte
+    publicToken: text("public_token").notNull().unique(), // opaco, es lo que va en la URL del QR físico
+    status: text("status").notNull().default("unassigned"), // unassigned | active | replaced | disabled
+    petId: text("pet_id").references((): AnyPgColumn => pets.id, { onDelete: "set null" }),
+    batchId: text("batch_id"),
+    distributorChannel: text("distributor_channel"),
+    activatedAt: timestamp("activated_at", { withTimezone: true }),
+    replacedAt: timestamp("replaced_at", { withTimezone: true }),
+    // Encadena la chapita vieja con la que la reemplazó, para reconstruir el historial completo.
+    replacedByTagId: text("replaced_by_tag_id").references((): AnyPgColumn => qrTags.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    // Garantiza que una mascota nunca tenga más de una chapita "active" a la vez.
+    // (Postgres solo permite un índice único parcial; el estado 'replaced'/'disabled'
+    // queda fuera de esta restricción a propósito, por eso el historial se conserva.)
+    onlyOneActivePerPet: uniqueIndex("qr_tags_one_active_per_pet")
+      .on(table.petId)
+      .where(sql`${table.status} = 'active'`),
+  }),
+);
+
+export const qrScans = pgTable("qr_scans", {
+  id: text("id").primaryKey(),
+  qrTagId: text("qr_tag_id").notNull().references(() => qrTags.id, { onDelete: "cascade" }),
+  scannedAt: timestamp("scanned_at", { withTimezone: true }).notNull().defaultNow(),
+  geoShared: boolean("geo_shared").notNull().default(false),
+  lat: numeric("lat"),
+  lng: numeric("lng"),
+  notified: boolean("notified").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
