@@ -1,0 +1,29 @@
+{
+  "name": "@pettapp/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start -p ${PORT:-3000}"
+  },
+  "dependencies": {
+    "next": "^15.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "better-auth": "^1.1.0",
+    "drizzle-orm": "^0.36.0",
+    "@aws-sdk/client-s3": "^3.679.0",
+    "@aws-sdk/s3-request-presigner": "^3.679.0",
+    "web-push": "^3.6.7",
+    "qrcode": "^1.5.4",
+    "@pettapp/db": "*",
+    "@pettapp/payments": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/react": "^18.3.0",
+    "@types/node": "^22.7.0",
+    "tsx": "^4.19.0"
+  }
+}

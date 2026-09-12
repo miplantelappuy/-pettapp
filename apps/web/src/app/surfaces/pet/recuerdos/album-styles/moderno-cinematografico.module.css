@@ -1,0 +1,76 @@
+.full {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--color-ink);
+}
+
+.full img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.caption {
+  position: absolute;
+  left: 1.25rem;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  color: var(--album-paper-light);
+  font-family: var(--font-album-display);
+  font-size: 1.1rem;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+  margin: 0;
+}
+
+.collage2 {
+  display: grid;
+  grid-template-columns: 62% 38%;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  background: var(--album-paper);
+}
+
+.collage2Large,
+.collage2Small {
+  overflow: hidden;
+}
+
+.collage2Large img,
+.collage2Small img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.collage3 {
+  display: grid;
+  grid-template-columns: 60% 40%;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  background: var(--album-paper);
+}
+
+.collage3Main {
+  overflow: hidden;
+}
+
+.collage3Main img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.collage3Side {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 4px;
+}
+
+.collage3Side img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

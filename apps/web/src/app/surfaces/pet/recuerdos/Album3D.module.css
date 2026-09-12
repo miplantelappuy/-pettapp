@@ -1,0 +1,126 @@
+.stage {
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  perspective: 2200px;
+}
+
+.empty {
+  color: var(--color-cloud);
+  font-family: var(--font-body);
+  text-align: center;
+  padding: 4rem 1rem;
+}
+
+.book {
+  width: min(92vw, 640px);
+  aspect-ratio: 4 / 3;
+  transform-style: preserve-3d;
+  position: relative;
+}
+
+/* Tapa cerrada: vidrio grueso con un halo de color detrás, para que se
+   sienta un objeto físico (no una card plana) sin volver al lenguaje de
+   "papel" — el interior sí usa la plantilla elegida (album-styles/). */
+.cover {
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--glass-border-strong);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  background: linear-gradient(155deg, rgba(139, 123, 247, 0.55), rgba(255, 138, 91, 0.45)), var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  box-shadow: var(--glass-shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: transform 0.3s ease;
+}
+
+.cover:hover {
+  transform: translateY(-4px);
+}
+
+.coverTitle {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.75rem, 6vw, 2.75rem);
+  /* La tapa siempre tiene su propio tinte de color (violeta/coral) encima
+     del vidrio, sin importar el fondo general — color fijo, no --color-cloud. */
+  color: #fff;
+}
+
+.coverSubtitle {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.interior {
+  width: 100%;
+  height: 100%;
+  background: var(--album-paper-light);
+  border-radius: var(--radius-md);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  position: relative;
+}
+
+.leaf {
+  width: 100%;
+  height: 100%;
+  transform-origin: left center;
+  backface-visibility: hidden;
+  transition: transform 0.38s ease, opacity 0.38s ease;
+}
+
+.leafTurnNext {
+  transform: rotateY(-8deg);
+  opacity: 0.4;
+}
+
+.leafTurnPrev {
+  transform: rotateY(8deg);
+  opacity: 0.4;
+}
+
+.controls {
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.controlButton {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border-strong);
+  background: var(--glass-bg);
+  color: var(--color-cloud);
+  font-size: 1.25rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.controlButton:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.pageCount {
+  font-family: var(--font-body);
+  color: var(--color-cloud-dim);
+  font-size: 0.85rem;
+  min-width: 8rem;
+  text-align: center;
+  white-space: nowrap;
+}
