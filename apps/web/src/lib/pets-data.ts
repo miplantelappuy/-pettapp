@@ -22,6 +22,8 @@ export interface PetHomeData {
   birthDate: string | null;
   birthDatePrecision: string;
   templateId: string;
+  emergencyContactName: string | null;
+  emergencyContactPhone: string | null;
   heroMedia: ResolvedMedia | null;
   media: ResolvedMedia[];
 }
@@ -63,6 +65,8 @@ export async function getPetHomeData(slug: string): Promise<PetHomeData | null> 
     birthDate: pet.birthDate,
     birthDatePrecision: pet.birthDatePrecision,
     templateId: pet.templateId,
+    emergencyContactName: pet.emergencyContactName,
+    emergencyContactPhone: pet.emergencyContactPhone,
     heroMedia,
     media,
   };

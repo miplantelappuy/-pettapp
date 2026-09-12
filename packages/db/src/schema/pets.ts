@@ -24,6 +24,13 @@ export const pets = pgTable("pets", {
   birthDatePrecision: text("birth_date_precision").notNull().default("exact"), // exact | month | year
   bioPhrase: text("bio_phrase"),
   templateId: text("template_id").notNull().default("cinematic"), // arquitectura lista; plantillas reales son Fase 1+
+  // Contacto que se muestra en el perfil público de emergencia (tag.BASE_DOMAIN/t/…)
+  // para el botón "Llamar al dueño". Vive en la mascota (no en el usuario/org)
+  // porque quien contesta ese teléfono puede no ser el mismo para cada mascota
+  // de una familia con varias, y porque el dueño lo tiene que poder cambiar sin
+  // afectar su teléfono de cuenta.
+  emergencyContactName: text("emergency_contact_name"),
+  emergencyContactPhone: text("emergency_contact_phone"),
   // FK a pet_media declarada más abajo para evitar dependencia circular en la definición.
   iconMediaId: text("icon_media_id"),
   microchipNumber: text("microchip_number"),

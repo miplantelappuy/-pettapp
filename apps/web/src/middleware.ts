@@ -42,7 +42,10 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Todo excepto assets estáticos y archivos internos de Next.
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    // Todo excepto assets estáticos, archivos internos de Next, y el service
+    // worker (sw.js DEBE servirse tal cual desde la raíz, sin reescribir —
+    // si no, el navegador nunca lo registra y las notificaciones push no
+    // funcionan).
+    "/((?!_next/static|_next/image|favicon.ico|sw.js).*)",
   ],
 };

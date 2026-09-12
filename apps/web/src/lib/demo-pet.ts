@@ -37,6 +37,8 @@ export function getDemoPetHomeData(): PetHomeData {
     birthDate: "2024-06-15",
     birthDatePrecision: "exact",
     templateId: "moderno-cinematografico",
+    emergencyContactName: "Facundo",
+    emergencyContactPhone: "+59899123456",
     heroMedia: media[0],
     media,
   };

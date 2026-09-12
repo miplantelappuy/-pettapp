@@ -34,6 +34,10 @@ export async function POST(request: NextRequest) {
 
   const storage = getStorage();
   const { uploadUrl } = await storage.getUploadUrl(key, body.contentType);
+  // Se devuelve ya resuelta para que el cliente pueda mostrar la foto de
+  // inmediato después de subirla, sin tener que volver a pedirle todo a la
+  // página (mismo criterio que usa lib/pets-data.ts para el Home/Álbum).
+  const readUrl = await storage.getReadUrl(key);
 
   await db.insert(schema.petMedia).values({
     id: mediaId,
@@ -51,5 +55,5 @@ export async function POST(request: NextRequest) {
     type: body.kind,
   });
 
-  return NextResponse.json({ uploadUrl, mediaId, key }, { status: 201 });
+  return NextResponse.json({ uploadUrl, mediaId, key, readUrl }, { status: 201 });
 }
