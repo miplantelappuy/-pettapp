@@ -16,6 +16,10 @@ export interface StorageProvider {
   getUploadUrl(key: string, contentType: string): Promise<{ uploadUrl: string; key: string }>;
   /** URL firmada de lectura (contenido privado por defecto). */
   getReadUrl(key: string): Promise<string>;
+  /** Escritura directa desde el servidor — para subidas públicas (ver
+   * /api/gifts/upload) donde no tiene sentido el viaje de ida y vuelta de
+   * una URL firmada: el archivo ya llegó a nuestro servidor de todos modos. */
+  putObject(key: string, data: Buffer, contentType: string): Promise<void>;
 }
 
 class R2Storage implements StorageProvider {
@@ -45,6 +49,12 @@ class R2Storage implements StorageProvider {
     const command = new GetObjectCommand({ Bucket: this.bucket, Key: key });
     return getSignedUrl(this.client, command, { expiresIn: 60 * 10 });
   }
+
+  async putObject(key: string, data: Buffer, contentType: string) {
+    await this.client.send(
+      new PutObjectCommand({ Bucket: this.bucket, Key: key, Body: data, ContentType: contentType }),
+    );
+  }
 }
 
 class LocalFsStorage implements StorageProvider {
@@ -68,6 +78,10 @@ class LocalFsStorage implements StorageProvider {
     const filePath = join(this.dir, key);
     await mkdir(dirname(filePath), { recursive: true });
     await writeFile(filePath, data);
+  }
+
+  async putObject(key: string, data: Buffer) {
+    await this.writeLocal(key, data);
   }
 }
 

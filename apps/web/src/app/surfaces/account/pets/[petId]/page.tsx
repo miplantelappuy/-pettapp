@@ -4,6 +4,7 @@ import { db, schema } from "@pettapp/db";
 import { auth } from "@/lib/auth";
 import { getPetHomeData } from "@/lib/pets-data";
 import { getVaccinations } from "@/lib/vaccinations-data";
+import { getSurfacePrefix } from "@/lib/surface-prefix";
 import { ManagePet } from "./ManagePet";
 
 export default async function ManagePetPage({ params }: { params: Promise<{ petId: string }> }) {
@@ -43,6 +44,9 @@ export default async function ManagePetPage({ params }: { params: Promise<{ petI
   if (!petData) return null;
 
   const vaccinations = await getVaccinations(petId);
+  const prefix = await getSurfacePrefix(); // "" con dominio propio, "/app" hoy sin uno
 
-  return <ManagePet petId={petId} initialPet={petData} initialVaccinations={vaccinations} />;
+  return (
+    <ManagePet petId={petId} initialPet={petData} initialVaccinations={vaccinations} accountHref={prefix || "/"} />
+  );
 }

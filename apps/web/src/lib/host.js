@@ -56,3 +56,39 @@ export function resolveHost(hostHeader, baseDomain) {
 
   return { surface: "pet", slug: prefix };
 }
+
+const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+
+/**
+ * Alias de rutas TEMPORAL, solo mientras no hay dominio propio con DNS
+ * wildcard: deja entrar a las superficies account/emergency/pet desde el
+ * dominio raíz (sin subdominio real), navegando con links normales en vez
+ * de escribir subdominios a mano. El middleware solo llama a esto cuando
+ * `resolveHost` ya dio surface "root" — el día que haya dominio propio, cada
+ * superficie le llega con SU host (surface ya no es "root") y este alias
+ * deja de usarse solo, sin tener que borrar nada a las apuradas.
+ *
+ * @param {string} pathname
+ * @returns {{ surface: "account", rest: string }
+ *         | { surface: "emergency", rest: string }
+ *         | { surface: "pet", slug: string, rest: string }
+ *         | null}
+ */
+export function resolveTempPathSurface(pathname) {
+  if (pathname === "/app" || pathname.startsWith("/app/")) {
+    const rest = pathname.slice("/app".length);
+    return { surface: "account", rest: rest || "/" };
+  }
+
+  if (pathname === "/tag" || pathname.startsWith("/tag/")) {
+    const rest = pathname.slice("/tag".length);
+    return { surface: "emergency", rest: `/t${rest}` };
+  }
+
+  const petMatch = pathname.match(/^\/p\/([^/]+)(\/.*)?$/);
+  if (petMatch && SLUG_RE.test(petMatch[1])) {
+    return { surface: "pet", slug: petMatch[1], rest: petMatch[2] || "/" };
+  }
+
+  return null;
+}

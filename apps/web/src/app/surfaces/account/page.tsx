@@ -3,17 +3,24 @@ import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
 import { auth } from "@/lib/auth";
+import { BASE_DOMAIN, BASE_PROTOCOL, HAS_CUSTOM_DOMAIN } from "@/lib/env";
+import { getSurfacePrefix } from "@/lib/surface-prefix";
 import { PushOptIn } from "./PushOptIn";
+import { LoginForm } from "./LoginForm";
+import { ActivateForm } from "./ActivateForm";
+import styles from "./account.module.css";
 
 export default async function AccountPage() {
   const hdrs = await headers();
   const session = await auth.api.getSession({ headers: hdrs });
+  const prefix = await getSurfacePrefix();
 
   if (!session) {
     return (
-      <main style={{ padding: "3rem 1.5rem", textAlign: "center", fontFamily: "var(--font-body)" }}>
-        <h1 style={{ fontFamily: "var(--font-display)" }}>Tu cuenta</h1>
-        <p>Iniciá sesión para ver y gestionar tus mascotas.</p>
+      <main className={styles.page}>
+        <h1 className={styles.title}>Tu familia</h1>
+        <p className={styles.lead}>Ingresá con tu email para ver y gestionar tus mascotas.</p>
+        <LoginForm />
       </main>
     );
   }
@@ -25,22 +32,42 @@ export default async function AccountPage() {
     : [];
 
   return (
-    <main style={{ padding: "2rem 1.5rem", maxWidth: 640, margin: "0 auto", fontFamily: "var(--font-body)" }}>
-      <h1 style={{ fontFamily: "var(--font-display)" }}>Tu familia</h1>
+    <main className={styles.page}>
+      <h1 className={styles.title}>Tu familia</h1>
 
       {organizationId && <PushOptIn organizationId={organizationId} />}
 
-      {pets.length === 0 ? (
-        <p>Todavía no activaste ninguna chapita.</p>
-      ) : (
-        <ul style={{ listStyle: "none", padding: 0, display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-          {pets.map((pet) => (
-            <li key={pet.id}>
-              <Link href={`/pets/${pet.id}`}>Gestionar a {pet.name} →</Link>
-            </li>
-          ))}
+      {pets.length > 0 && (
+        <ul className={styles.petList}>
+          {pets.map((pet) => {
+            const petHref = HAS_CUSTOM_DOMAIN ? `${BASE_PROTOCOL}://${pet.slug}.${BASE_DOMAIN}` : `/p/${pet.slug}`;
+            return (
+              <li key={pet.id} className={styles.petCard}>
+                <span className={styles.petName}>{pet.name}</span>
+                <span className={styles.petLinks}>
+                  <a href={petHref}>Ver su app →</a>
+                  <Link href={`${prefix}/pets/${pet.id}`}>Gestionar →</Link>
+                </span>
+              </li>
+            );
+          })}
         </ul>
       )}
+
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>
+          {pets.length === 0 ? "Activá tu primera chapita" : "¿Tenés otra chapita para activar?"}
+        </h2>
+        <p className={styles.hint}>
+          El código viene impreso en la chapita física (o escaneá su QR — te lleva directo acá con el código ya
+          cargado, cuando esa pantalla esté lista).
+        </p>
+        <ActivateForm tempPathMode={!HAS_CUSTOM_DOMAIN} baseDomain={BASE_DOMAIN} baseProtocol={BASE_PROTOCOL} />
+      </section>
+
+      <Link href={`${prefix}/qr`} className={styles.textLink}>
+        Generar chapitas nuevas →
+      </Link>
     </main>
   );
 }

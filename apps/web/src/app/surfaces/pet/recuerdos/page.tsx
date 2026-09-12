@@ -1,10 +1,14 @@
 import { headers } from "next/headers";
 import { getPetHomeData } from "@/lib/pets-data";
+import { getSurfacePrefix } from "@/lib/surface-prefix";
+import { hasPetAccess } from "@/lib/pin";
+import { PetPinGate } from "../PetPinGate";
 import { AlbumView } from "./AlbumView";
 
 export default async function RecuerdosPage() {
   const slug = (await headers()).get("x-pet-slug");
   const pet = slug ? await getPetHomeData(slug) : null;
+  const prefix = await getSurfacePrefix(); // "" con dominio propio, "/p/<slug>" hoy sin uno
 
   if (!pet) {
     return (
@@ -14,5 +18,10 @@ export default async function RecuerdosPage() {
     );
   }
 
-  return <AlbumView pet={pet} />;
+  const authorized = await hasPetAccess(pet.id);
+  if (!authorized) {
+    return <PetPinGate petId={pet.id} petName={pet.name} />;
+  }
+
+  return <AlbumView pet={pet} backHref={prefix || "/"} />;
 }

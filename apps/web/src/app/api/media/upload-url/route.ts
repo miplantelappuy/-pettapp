@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { randomUUID } from "node:crypto";
 import { db, schema } from "@pettapp/db";
-import { auth } from "@/lib/auth";
+import { assertPetOwnership } from "@/lib/authz";
 import { getStorage } from "@/lib/storage";
 
 interface Body {
@@ -14,18 +14,13 @@ interface Body {
 // El navegador sube el archivo DIRECTO a R2 (o al endpoint local en dev) con
 // la URL que devuelve esto — el archivo pesado nunca pasa por este servidor.
 export async function POST(request: NextRequest) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
-
   const body = (await request.json()) as Body;
   if (!body?.petId || !body?.contentType || !body?.kind) {
     return NextResponse.json({ error: "Faltan campos" }, { status: 400 });
   }
 
-  // TODO Fase 1: verificar que body.petId pertenece a una organización de la
-  // que `session.user` es miembro.
+  const check = await assertPetOwnership(request, body.petId);
+  if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
 
   const mediaId = randomUUID();
   const ext = body.contentType.split("/")[1] ?? "bin";

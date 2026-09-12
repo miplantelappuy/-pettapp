@@ -16,7 +16,13 @@ export default function PreviewManagePage() {
   return (
     <>
       <PreviewBanner />
-      <ManagePet petId="demo-pet" initialPet={demoPet} initialVaccinations={DEMO_VACCINATIONS} demoMode />
+      <ManagePet
+        petId="demo-pet"
+        initialPet={demoPet}
+        initialVaccinations={DEMO_VACCINATIONS}
+        demoMode
+        accountHref="/preview-home"
+      />
     </>
   );
 }

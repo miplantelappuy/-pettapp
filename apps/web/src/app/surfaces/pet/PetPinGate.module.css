@@ -1,0 +1,57 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.card {
+  width: 100%;
+  max-width: 360px;
+  padding: 2.25rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  text-align: center;
+}
+
+.emoji {
+  font-size: 2rem;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.5rem;
+  margin: 0;
+  color: var(--color-cloud);
+}
+
+.lead {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--color-cloud-dim);
+  margin: 0 0 0.5rem;
+}
+
+.pinInput {
+  width: 100%;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  letter-spacing: 0.5rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-soft);
+  color: var(--color-cloud);
+}
+
+.errorMsg {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-danger);
+  margin: 0;
+}

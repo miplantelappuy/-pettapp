@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { resolveHost } from "./host.js";
+import { resolveHost, resolveTempPathSurface } from "./host.js";
 
 const BASE = "tuapp.com";
 
@@ -27,4 +27,14 @@ assert.equal(resolveHost("-milo.tuapp.com", BASE), null); // no puede empezar co
 assert.equal(resolveHost("", BASE), null);
 assert.equal(resolveHost("milo.tuapp.com", ""), null);
 
-console.log("host.test.mjs: todos los casos pasaron (%d asserts)", 15);
+// Alias de rutas temporal (sin dominio propio)
+assert.deepEqual(resolveTempPathSurface("/app"), { surface: "account", rest: "/" });
+assert.deepEqual(resolveTempPathSurface("/app/pets/xyz"), { surface: "account", rest: "/pets/xyz" });
+assert.deepEqual(resolveTempPathSurface("/tag/abc123"), { surface: "emergency", rest: "/t/abc123" });
+assert.deepEqual(resolveTempPathSurface("/p/milo"), { surface: "pet", slug: "milo", rest: "/" });
+assert.deepEqual(resolveTempPathSurface("/p/milo/recuerdos"), { surface: "pet", slug: "milo", rest: "/recuerdos" });
+assert.equal(resolveTempPathSurface("/preview-home"), null); // no debe pisar las rutas de preview existentes
+assert.equal(resolveTempPathSurface("/p/-milo"), null); // slug con formato inválido
+assert.equal(resolveTempPathSurface("/apps/otracosa"), null); // no debe matchear por prefijo parcial ("/apps" != "/app")
+
+console.log("host.test.mjs: todos los casos pasaron (%d asserts)", 23);

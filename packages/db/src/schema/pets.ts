@@ -34,6 +34,12 @@ export const pets = pgTable("pets", {
   // FK a pet_media declarada más abajo para evitar dependencia circular en la definición.
   iconMediaId: text("icon_media_id"),
   microchipNumber: text("microchip_number"),
+  // Acceso al panel de dueño SIN cuenta/login: un PIN de 4-6 dígitos que se
+  // define al vincular la chapita (ver /api/qr/activate). Se guarda hasheado
+  // (lib/pin.ts, scrypt con salt propio) — nunca en texto plano. null en
+  // mascotas creadas antes de este cambio (no debería haber ninguna en
+  // producción real todavía).
+  managePinHash: text("manage_pin_hash"),
   lostMode: boolean("lost_mode").notNull().default(false),
   lostModeActivatedAt: timestamp("lost_mode_activated_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -84,6 +90,21 @@ export const qrTags = pgTable(
       .where(sql`${table.status} = 'active'`),
   }),
 );
+
+// "Sobres de figuritas": cualquiera que escanea una chapita activa puede
+// dejarle fotos a la mascota sin necesitar cuenta ni PIN — el dueño las
+// encuentra sin abrir todavía (openedAt null) la próxima vez que entra a su
+// panel, como una sorpresa. Al abrirlas, el dueño decide cuáles guardar de
+// verdad en pet_media (ver /surfaces/pet/regalos).
+export const petGifts = pgTable("pet_gifts", {
+  id: text("id").primaryKey(),
+  petId: text("pet_id").notNull().references((): AnyPgColumn => pets.id, { onDelete: "cascade" }),
+  storageKey: text("storage_key").notNull(),
+  contentType: text("content_type").notNull(),
+  senderNote: text("sender_note"),
+  openedAt: timestamp("opened_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 export const qrScans = pgTable("qr_scans", {
   id: text("id").primaryKey(),

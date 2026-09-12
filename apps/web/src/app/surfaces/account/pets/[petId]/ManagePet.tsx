@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { PetHomeData, ResolvedMedia } from "@/lib/pets-data";
 import type { VaccinationRow } from "@/lib/vaccinations-data";
 import { albumStyles } from "@/app/surfaces/pet/recuerdos/album-styles/registry";
@@ -23,9 +24,12 @@ interface Props {
   /** true en /preview-manage: todo pasa en memoria, nada se guarda de verdad
    * (no hay login ni mascota real todavía sin dominio propio). */
   demoMode?: boolean;
+  /** Link de vuelta a "Tu familia" — ya viene con el prefijo correcto
+   * (/app o "" según haya o no dominio propio) resuelto por quien llama. */
+  accountHref?: string;
 }
 
-export function ManagePet({ petId, initialPet, initialVaccinations, demoMode = false }: Props) {
+export function ManagePet({ petId, initialPet, initialVaccinations, demoMode = false, accountHref }: Props) {
   const [pet, setPet] = useState(initialPet);
   const [media, setMedia] = useState<ResolvedMedia[]>(initialPet.media);
   const [vaccinations, setVaccinations] = useState<VaccinationRow[]>(initialVaccinations);
@@ -143,11 +147,17 @@ export function ManagePet({ petId, initialPet, initialVaccinations, demoMode = f
         </div>
       )}
 
+      {accountHref && (
+        <Link href={accountHref} className={styles.backLink}>
+          ← Volver a mi cuenta
+        </Link>
+      )}
+
       <h1 className={styles.title}>Gestionar a {pet.name}</h1>
       {savedFlash && <div className={styles.flash}>{savedFlash}</div>}
 
       {/* ── Fotos ── */}
-      <section className={styles.section}>
+      <section className={`${styles.section} glass`}>
         <h2 className={styles.sectionTitle}>Fotos</h2>
         <div className={styles.photoGrid}>
           {media.map((m) => (
@@ -183,7 +193,7 @@ export function ManagePet({ petId, initialPet, initialVaccinations, demoMode = f
       </section>
 
       {/* ── Estilo de álbum ── */}
-      <section className={styles.section}>
+      <section className={`${styles.section} glass`}>
         <h2 className={styles.sectionTitle}>Estilo del álbum</h2>
         <div className={styles.styleGrid}>
           {Object.values(albumStyles).map((style) => (
@@ -206,7 +216,7 @@ export function ManagePet({ petId, initialPet, initialVaccinations, demoMode = f
       </section>
 
       {/* ── Contacto de emergencia ── */}
-      <section className={styles.section}>
+      <section className={`${styles.section} glass`}>
         <h2 className={styles.sectionTitle}>Contacto de emergencia</h2>
         <p className={styles.hint}>Esto es lo que ve quien escanea la chapita física de {pet.name}.</p>
         <EmergencyContactForm
@@ -218,7 +228,7 @@ export function ManagePet({ petId, initialPet, initialVaccinations, demoMode = f
       </section>
 
       {/* ── Vacunas ── */}
-      <section className={styles.section}>
+      <section className={`${styles.section} glass`}>
         <h2 className={styles.sectionTitle}>Vacunas</h2>
         <ul className={styles.vaccineList}>
           {vaccinations.map((v) => (

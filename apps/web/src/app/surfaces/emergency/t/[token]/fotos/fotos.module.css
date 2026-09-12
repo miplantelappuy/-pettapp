@@ -1,0 +1,105 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 1.25rem 3rem;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.back {
+  align-self: flex-start;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-cloud-dim);
+  text-decoration: none;
+  margin-bottom: 1.25rem;
+}
+
+.heroThumb {
+  width: 96px;
+  height: 96px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 2px solid var(--glass-border-strong);
+  margin-bottom: 1rem;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 6vw, 2rem);
+  text-align: center;
+  margin: 0 0 0.5rem;
+}
+
+.lead {
+  font-family: var(--font-body);
+  color: var(--color-cloud-dim);
+  text-align: center;
+  font-size: 0.9rem;
+  margin: 0 0 1.75rem;
+  max-width: 40ch;
+}
+
+.card {
+  width: 100%;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: stretch;
+  text-align: center;
+}
+
+.dropzone {
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-md);
+  border: 1.5px dashed var(--glass-border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  color: var(--color-cloud-dim);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.previewImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.noteInput {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-soft);
+  color: var(--color-cloud);
+}
+
+.noteInput::placeholder {
+  color: var(--color-cloud-dim);
+}
+
+.errorMsg {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-danger);
+  margin: 0;
+}
+
+.sentEmoji {
+  font-size: 2.5rem;
+  margin: 0;
+}
+
+.sentText {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  margin: 0;
+}

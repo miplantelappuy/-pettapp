@@ -2,14 +2,16 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
 import { resolveScanView } from "@/lib/qr";
 import { getPetHomeData } from "@/lib/pets-data";
+import { crossSurfaceUrl, emergencyPath } from "@/lib/env";
 import { ScanReporter } from "./ScanReporter";
+import { ActivateTagForm } from "./ActivateTagForm";
 import styles from "./emergency.module.css";
 
 // tag.BASE_DOMAIN/t/{token} — perfil público de emergencia. Sin login, sin
-// menú, sin álbum, sin nada que la conecte visualmente con la app privada:
-// es una superficie de un solo propósito (que quien encontró a la mascota
-// pueda avisarle a la familia lo más rápido posible), deliberadamente
-// distinta del resto del producto.
+// menú: es la puerta de entrada física del producto (lo que hay grabado en
+// la chapita de acero). Tres estados posibles según el estado de la chapita:
+// sin vincular todavía (activación acá mismo), vinculada (perfil + acciones
+// rápidas + compartir fotos/entrar al panel), o dada de baja.
 export default async function EmergencyPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
 
@@ -27,10 +29,11 @@ export default async function EmergencyPage({ params }: { params: Promise<{ toke
 
   if (view.view === "activation_pending") {
     return (
-      <Shell>
+      <main className={styles.page}>
         <p className={styles.emoji}>🐾</p>
-        <p>Esta chapita está esperando a su mascota.</p>
-      </Shell>
+        <h1 className={styles.pendingTitle}>¡Hola! Todavía no tengo dueño</h1>
+        <ActivateTagForm token={token} />
+      </main>
     );
   }
 
@@ -51,28 +54,56 @@ export default async function EmergencyPage({ params }: { params: Promise<{ toke
 
   return (
     <main className={styles.page}>
-      {heroUrl ? (
-        <img src={heroUrl} alt={pet?.name} className={styles.photo} />
-      ) : (
-        <div className={styles.photoPlaceholder} aria-hidden />
-      )}
+      <div className={styles.heroWrap}>
+        {heroUrl ? (
+          <img src={heroUrl} alt={pet?.name} className={styles.photo} />
+        ) : (
+          <div className={styles.photoPlaceholder} aria-hidden />
+        )}
+        <div className={styles.heroScrim} />
+      </div>
 
-      <div className={styles.card}>
+      <div className={`${styles.card} glassStrong`}>
         {isLost && <div className={styles.lostBanner}>⚠️ {pet?.name} está perdido/a — su familia lo está buscando</div>}
 
         <h1 className={styles.name}>Hola 🐾 Soy {pet?.name}</h1>
         <p className={styles.subtitle}>Creo que estoy perdido/a. ¿Me ayudás a volver a casa?</p>
 
         {pet?.emergencyContactPhone ? (
-          <a href={`tel:${pet.emergencyContactPhone}`} className={styles.callButton}>
-            📞 Llamar a mi familia{pet.emergencyContactName ? ` (${pet.emergencyContactName})` : ""}
-          </a>
+          <div className={styles.actionRow}>
+            <a href={`tel:${pet.emergencyContactPhone}`} className="accentButton">
+              📞 Llamar a mi familia
+            </a>
+            <a
+              href={`https://wa.me/${pet.emergencyContactPhone.replace(/\D/g, "")}`}
+              target="_blank"
+              rel="noreferrer"
+              className="glassButton"
+            >
+              💬 WhatsApp
+            </a>
+          </div>
         ) : (
           <p className={styles.noPhone}>Su familia todavía no cargó un teléfono de contacto.</p>
         )}
 
         {pet && <ScanReporter token={token} petName={pet.name} />}
       </div>
+
+      {pet && petData && (
+        <div className={styles.optionsRow}>
+          <a href={emergencyPath(token, "/fotos")} className={`${styles.optionCard} glass`}>
+            <span className={styles.optionEmoji}>🎁</span>
+            <span className={styles.optionTitle}>Compartir fotos</span>
+            <span className={styles.optionText}>Dejale una foto a {pet.name} como sorpresa</span>
+          </a>
+          <a href={crossSurfaceUrl(petData.slug)} className={`${styles.optionCard} glass`}>
+            <span className={styles.optionEmoji}>🔑</span>
+            <span className={styles.optionTitle}>Soy el dueño</span>
+            <span className={styles.optionText}>Entrar al panel de {pet.name}</span>
+          </a>
+        </div>
+      )}
     </main>
   );
 }
@@ -80,7 +111,7 @@ export default async function EmergencyPage({ params }: { params: Promise<{ toke
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <main className={styles.page}>
-      <div className={styles.card}>{children}</div>
+      <div className={`${styles.card} glassStrong`}>{children}</div>
     </main>
   );
 }

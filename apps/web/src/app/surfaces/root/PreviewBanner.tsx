@@ -4,12 +4,14 @@ export function PreviewBanner() {
   return (
     <div
       style={{
-        background: "var(--color-ink)",
-        color: "var(--color-paper-light)",
+        background: "rgba(0, 0, 0, 0.35)",
+        color: "var(--color-cloud)",
         fontFamily: "var(--font-body)",
         fontSize: "0.8rem",
         textAlign: "center",
         padding: "0.5rem 1rem",
+        position: "relative",
+        zIndex: 3,
       }}
     >
       Vista previa con datos de muestra (Milo) — no es una mascota real todavía.
