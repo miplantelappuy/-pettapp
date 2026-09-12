@@ -32,7 +32,10 @@ export function PushOptIn({ organizationId }: { organizationId: string }) {
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey),
+        // El tipado de TS para PushManager.subscribe es más estricto que en
+        // versiones anteriores y no acepta Uint8Array<ArrayBufferLike>
+        // directamente — en runtime es exactamente lo que pide la API.
+        applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
       });
 
       await fetch("/api/push/subscribe", {
