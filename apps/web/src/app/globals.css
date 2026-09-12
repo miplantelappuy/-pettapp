@@ -1,0 +1,46 @@
+/* Paleta y base visual aprobadas para PettApp.
+   Cálida, fotográfica, tipo álbum/editorial — nunca dashboard SaaS.
+   Todo lo demás (Home, Álbum, futuros estilos) se apoya en estas variables,
+   así que un cambio de paleta a futuro se hace acá, no archivo por archivo. */
+
+:root {
+  --color-paper: #ede4d3;
+  --color-paper-light: #f7f2e9;
+  --color-ink: #221d1a;
+  --color-brass: #b8823d;
+  --color-ember: #c1502e;
+  --color-moss: #5b6b4f;
+
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-body: "General Sans", "Segoe UI", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background: var(--color-paper-light);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font-family: inherit;
+}
