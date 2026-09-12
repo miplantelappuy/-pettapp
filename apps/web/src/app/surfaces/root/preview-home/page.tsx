@@ -1,5 +1,5 @@
 import { getDemoPetHomeData } from "@/lib/demo-pet";
-import { PetHome } from "../../pet/PetHome";
+import { ResponsivePetHome } from "../../pet/ResponsivePetHome";
 import { PreviewBanner } from "../PreviewBanner";
 
 // Vista previa TEMPORAL: permite ver el Home de una mascota ya diseñado sin
@@ -12,7 +12,7 @@ export default function PreviewHomePage() {
   return (
     <>
       <PreviewBanner />
-      <PetHome pet={demoPet} albumHref="/preview-album" />
+      <ResponsivePetHome pet={demoPet} albumHref="/preview-album" />
     </>
   );
 }

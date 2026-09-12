@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { getPetHomeData } from "@/lib/pets-data";
-import { PetHome } from "./PetHome";
+import { ResponsivePetHome } from "./ResponsivePetHome";
 
 export default async function PetHomePage() {
   const slug = (await headers()).get("x-pet-slug");
@@ -17,5 +17,5 @@ export default async function PetHomePage() {
     );
   }
 
-  return <PetHome pet={pet} />;
+  return <ResponsivePetHome pet={pet} />;
 }
