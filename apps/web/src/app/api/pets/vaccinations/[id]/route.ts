@@ -10,7 +10,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   if (!record) return NextResponse.json({ error: "No encontrada" }, { status: 404 });
 
   const check = await assertPetOwnership(request, record.petId);
-  if ("error" in check) return NextResponse.json({ error: check.error }, { status: check.status });
+  if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
 
   await db.delete(schema.vaccinations).where(eq(schema.vaccinations.id, id));
   return NextResponse.json({ ok: true });
