@@ -11,7 +11,12 @@ export function middleware(request: NextRequest) {
   const resolved = resolveHost(hostHeader, BASE_DOMAIN);
 
   if (!resolved) {
-    return new NextResponse("Dominio no reconocido", { status: 404 });
+        // DEBUG TEMPORAL: se agrega para diagnosticar un 404 inesperado en Railway.
+    // Sacar apenas confirmemos la causa (no debe quedar en el código real).
+    return new NextResponse(
+      `Dominio no reconocido: host="${hostHeader}" base="${BASE_DOMAIN}"`,
+      { status: 404 },
+    );
   }
 
   const url = request.nextUrl.clone();
