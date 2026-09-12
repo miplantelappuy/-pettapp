@@ -11,11 +11,12 @@ export function middleware(request: NextRequest) {
   const resolved = resolveHost(hostHeader, BASE_DOMAIN);
 
   if (!resolved) {
-        // DEBUG TEMPORAL: se agrega para diagnosticar un 404 inesperado en Railway.
-    // Sacar apenas confirmemos la causa (no debe quedar en el código real).
+          // DEBUG TEMPORAL (status 200 a propósito, para poder leer el cuerpo con
+    // herramientas que no muestran el body en respuestas de error). Sacar
+    // apenas confirmemos la causa — el 404 real vuelve después.
     return new NextResponse(
-      `Dominio no reconocido: host="${hostHeader}" base="${BASE_DOMAIN}"`,
-      { status: 404 },
+      `DEBUG host="${hostHeader}" base="${BASE_DOMAIN}"`,
+      { status: 200 },
     );
   }
 
