@@ -10,7 +10,6 @@ import styles from "./ManagePet.module.css";
 // construidos — se muestran deshabilitados para que la arquitectura de
 // "elegir estilo" ya se sienta completa, sin fingir que funcionan.
 const PLANNED_STYLES = [
-  { id: "vintage", label: "Vintage" },
   { id: "elegante", label: "Elegante" },
   { id: "minimalista", label: "Minimalista" },
   { id: "acuarela", label: "Acuarela" },
