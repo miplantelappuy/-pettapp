@@ -57,6 +57,19 @@
   background: rgba(220, 38, 38, 0.08);
 }
 
+.lostZoneInput {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.85rem;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg-soft);
+  color: var(--color-cloud);
+}
+
 .sectionTitle {
   font-family: var(--font-display);
   font-weight: 600;

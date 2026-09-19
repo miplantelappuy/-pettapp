@@ -49,6 +49,13 @@ export const pets = pgTable("pets", {
   managePinHash: text("manage_pin_hash"),
   lostMode: boolean("lost_mode").notNull().default(false),
   lostModeActivatedAt: timestamp("lost_mode_activated_at", { withTimezone: true }),
+  // Zona/barrio donde se perdió — opcional, la carga el dueño al activar el
+  // modo perdido. Se muestra en el cartel de alerta del perfil público
+  // ("se perdió en la zona X") para que quien lo ve sepa si está cerca. Se
+  // limpia cuando se desactiva el modo perdido (mismo criterio que
+  // lostModeActivatedAt): si vuelve a perderse más adelante, no debería
+  // arrastrar una zona vieja que ya no aplica.
+  lostZone: text("lost_zone"),
   // Email opcional para avisos de escaneo (además del push) — separado del
   // email de una cuenta de verdad (que en el flujo principal ni existe) por
   // la misma razón que managePinHash: acá no hay usuario/sesión, la mascota
@@ -138,13 +145,21 @@ export const petGifts = pgTable("pet_gifts", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// Datos libres para el perfil de emergencia — "alergia a tal cosa",
-// "dirección", o lo que el dueño quiera agregar (no son campos fijos del
-// producto: cada mascota puede tener los suyos, con el texto que el dueño
-// elija para cada uno). orderIndex conserva el orden en que los cargó.
+// Datos libres para el perfil de emergencia. Dos tipos ("kind"):
+// - "medical_alert": UN dato fijo y especial ("Alerta médica") donde el
+//   dueño escribe todo lo relevante (alergias, condiciones, medicación) en
+//   un solo bloque de texto — se detecta por este campo, NUNCA adivinando
+//   palabras del texto que escribió el dueño (eso fallaba: "no es alergia
+//   a nada" también contiene "alergia"). Como mucho una fila por mascota.
+// - "custom": cualquier otro dato libre que el dueño quiera agregar
+//   (comportamiento, dirección, lo que sea), con el nombre que él elija.
+// orderIndex conserva el orden — el server siempre ordena "medical_alert"
+// primero antes de guardar, así aparece de entrada sin importar en qué
+// orden lo haya cargado el dueño.
 export const petEmergencyFields = pgTable("pet_emergency_fields", {
   id: text("id").primaryKey(),
   petId: text("pet_id").notNull().references((): AnyPgColumn => pets.id, { onDelete: "cascade" }),
+  kind: text("kind").notNull().default("custom"), // 'medical_alert' | 'custom'
   label: text("label").notNull(),
   value: text("value").notNull(),
   orderIndex: integer("order_index").notNull().default(0),

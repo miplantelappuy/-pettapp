@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
 import { resolveScanView } from "@/lib/qr";
 import { getPetHomeData } from "@/lib/pets-data";
-import { getEmergencyFields, isAllergyLabel } from "@/lib/emergency-fields-data";
+import { getEmergencyFields } from "@/lib/emergency-fields-data";
 import { crossSurfaceUrl, emergencyPath } from "@/lib/env";
 import { EmergencyActions } from "./EmergencyActions";
 import { ActivateTagForm } from "./ActivateTagForm";
@@ -56,8 +56,11 @@ export default async function EmergencyPage({ params }: { params: Promise<{ toke
   const heroUrl = petData?.emergencyPhotoUrl ?? null;
   const isLost = view.view === "lost_mode";
   const emergencyFields = pet ? await getEmergencyFields(pet.id) : [];
-  const allergyFields = emergencyFields.filter((f) => isAllergyLabel(f.label));
-  const otherFields = emergencyFields.filter((f) => !isAllergyLabel(f.label));
+  // "medical_alert" es un tipo de dato aparte que eligió el dueño al
+  // cargarlo (ver EmergencyCardEditor) — no algo que se adivina del texto,
+  // así que como mucho hay uno y siempre va primero.
+  const medicalAlert = emergencyFields.find((f) => f.kind === "medical_alert") ?? null;
+  const otherFields = emergencyFields.filter((f) => f.kind !== "medical_alert");
 
   return (
     <main className={`${styles.page} ${isLost ? styles.pageAlert : ""}`}>
@@ -80,24 +83,28 @@ export default async function EmergencyPage({ params }: { params: Promise<{ toke
         {isLost && (
           <div className={styles.lostBanner}>
             🚨 {pet?.name} está perdido/a 🚨
-            <span className={styles.lostBannerSub}>Su familia lo está buscando — cualquier dato ayuda</span>
+            <span className={styles.lostBannerSub}>
+              {petData?.lostZone
+                ? `Se perdió en la zona: ${petData.lostZone} — cualquier dato ayuda`
+                : "Su familia lo está buscando — cualquier dato ayuda"}
+            </span>
           </div>
         )}
 
         <h1 className={styles.name}>Hola 🐾 Soy {pet?.name}</h1>
         <p className={styles.subtitle}>Creo que estoy perdido/a. ¿Me ayudás a volver a casa?</p>
 
-        {allergyFields.map((f) => (
-          <div key={f.id} className={styles.allergyAlert}>
+        {medicalAlert && (
+          <div className={styles.allergyAlert}>
             <span className={styles.allergyIcon} aria-hidden>
               ⚠️
             </span>
             <span className={styles.allergyText}>
-              <strong>{f.label}</strong>
-              {f.value}
+              <strong>Alerta médica</strong>
+              {medicalAlert.value}
             </span>
           </div>
-        ))}
+        )}
 
         {otherFields.length > 0 && (
           <dl className={styles.fieldsList}>

@@ -78,6 +78,7 @@ export function ManagePet({
   const [milestones, setMilestones] = useState<MilestoneRow[]>(initialMilestones);
   const [emergencyFields, setEmergencyFields] = useState<EmergencyFieldRow[]>(initialEmergencyFields);
   const [savingFields, setSavingFields] = useState(false);
+  const [lostZoneDraft, setLostZoneDraft] = useState(initialPet.lostZone ?? "");
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState<string | null>(null);
   const [processingVideo, setProcessingVideo] = useState(false);
@@ -301,17 +302,21 @@ export function ManagePet({
   // perdida.
   async function toggleLostMode() {
     const next = !pet.lostMode;
+    const zone = next ? lostZoneDraft.trim() || null : null;
     const confirmMsg = next
       ? `¿Marcar a ${pet.name} como perdido/a? Quien escanee su chapita va a ver una alerta a pantalla completa hasta que lo desactives.`
       : `¿Marcar que ${pet.name} ya apareció? Se apaga la alerta en su perfil público.`;
     if (!window.confirm(confirmMsg)) return;
 
-    setPet((p) => ({ ...p, lostMode: next, lostModeActivatedAt: next ? new Date().toISOString() : null }) as PetHomeData);
+    setPet(
+      (p) => ({ ...p, lostMode: next, lostModeActivatedAt: next ? new Date().toISOString() : null, lostZone: zone }) as PetHomeData,
+    );
+    if (!next) setLostZoneDraft("");
     if (demoMode) return flash(next ? "Modo perdido activado (vista previa)" : "Modo perdido desactivado (vista previa)");
     await fetch(`/api/pets/${petId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lostMode: next }),
+      body: JSON.stringify({ lostMode: next, lostZone: zone }),
     });
     flash(next ? "Modo perdido activado" : `¡Qué alegría! Modo perdido desactivado`);
   }
@@ -341,8 +346,11 @@ export function ManagePet({
   // de guardar nada. id temporal con crypto.randomUUID() para las filas
   // nuevas: solo se usa como key de React y para encontrar la fila al
   // editar/borrar, el id de verdad lo asigna el server recién al guardar.
-  function addEmergencyField() {
-    setEmergencyFields((list) => [...list, { id: crypto.randomUUID(), label: "", value: "" }]);
+  function addEmergencyField(kind: "medical_alert" | "custom") {
+    setEmergencyFields((list) => [
+      ...list,
+      { id: crypto.randomUUID(), kind, label: kind === "medical_alert" ? "Alerta médica" : "", value: "" },
+    ]);
   }
 
   function updateEmergencyField(id: string, patch: Partial<Pick<EmergencyFieldRow, "label" | "value">>) {
@@ -373,7 +381,7 @@ export function ManagePet({
         fetch(`/api/pets/${petId}/emergency-fields`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fields: emergencyFields.map(({ label, value }) => ({ label, value })) }),
+          body: JSON.stringify({ fields: emergencyFields.map(({ kind, label, value }) => ({ kind, label, value })) }),
         }),
       ]);
       const fieldsBody = await fieldsRes.json().catch(() => null);
@@ -382,7 +390,10 @@ export function ManagePet({
       // de verdad quedó guardado (con ids de verdad) en vez de lo que había
       // en el formulario.
       setEmergencyFields(
-        (fieldsBody.fields as { label: string; value: string }[]).map((f) => ({ id: crypto.randomUUID(), ...f })),
+        (fieldsBody.fields as { kind: "medical_alert" | "custom"; label: string; value: string }[]).map((f) => ({
+          id: crypto.randomUUID(),
+          ...f,
+        })),
       );
       if (!contactRes.ok) return flash("Se guardaron los datos, pero no el contacto");
       flash("Perfil de emergencia guardado");
@@ -416,6 +427,24 @@ export function ManagePet({
             ? `El perfil público de ${pet.name} está mostrando una alerta a pantalla completa a quien escanee su chapita. Desactivalo apenas aparezca.`
             : `Si ${pet.name} se perdió, activalo acá: quien escanee su chapita va a ver una alerta bien visible en vez del perfil normal, y vas a poder descargar una imagen lista para compartir en redes.`}
         </p>
+
+        {pet.lostMode ? (
+          pet.lostZone && (
+            <p className={styles.hint} style={{ marginTop: "-0.5rem" }}>
+              📍 Zona informada: <strong>{pet.lostZone}</strong>
+            </p>
+          )
+        ) : (
+          <input
+            type="text"
+            className={styles.lostZoneInput}
+            placeholder="Zona donde se perdió (opcional, ej: Barrio Centro)"
+            value={lostZoneDraft}
+            onChange={(e) => setLostZoneDraft(e.target.value)}
+            maxLength={120}
+          />
+        )}
+
         <button
           type="button"
           className={pet.lostMode ? "glassButton" : "accentButton"}

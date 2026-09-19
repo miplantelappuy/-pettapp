@@ -47,6 +47,9 @@ export interface PetHomeData {
    * lib/qr.js) y habilita la imagen para compartir. */
   lostMode: boolean;
   lostModeActivatedAt: string | null;
+  /** Zona/barrio donde se perdió, cargada por el dueño al activar el modo
+   * perdido — null si no la cargó (es opcional) o si no está perdida. */
+  lostZone: string | null;
   /** Email opcional para recibir avisos de escaneo además del push (ver
    * lib/email.ts) — null si el dueño no cargó ninguno. */
   notifyEmail: string | null;
@@ -119,6 +122,7 @@ export async function getPetHomeData(slug: string): Promise<PetHomeData | null> 
     iconUrl,
     lostMode: pet.lostMode,
     lostModeActivatedAt: pet.lostModeActivatedAt ? pet.lostModeActivatedAt.toISOString() : null,
+    lostZone: pet.lostZone,
     notifyEmail: pet.notifyEmail,
     heroMedia,
     media,

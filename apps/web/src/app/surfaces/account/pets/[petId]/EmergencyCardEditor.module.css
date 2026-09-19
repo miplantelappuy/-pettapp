@@ -1,8 +1,9 @@
 /* Este archivo NO redefine el diseño del perfil de emergencia — eso vive en
    emergency.module.css y se importa tal cual (ver EmergencyCardEditor.tsx),
    para que el dueño vea exactamente lo mismo que ve quien escanea la
-   chapita. Acá solo van los estilos de los <input> que reemplazan al texto
-   fijo, y el marco/botón que envuelven esa tarjeta dentro de "Gestionar". */
+   chapita. Acá solo van los estilos de los <input>/<textarea> que
+   reemplazan al texto fijo, y el marco/botón que envuelven esa tarjeta
+   dentro de "Gestionar". */
 
 .wrap {
   display: flex;
@@ -23,18 +24,105 @@
   margin: 1.25rem auto 0;
 }
 
-/* ── Inputs en línea — mismo look "vidrio" que el resto de la app, para que
-   se note que son editables sin dejar de sentirse parte de la tarjeta. */
+/* ── Contacto: sección propia, separada visualmente de los "datos" ── */
+
+.contactSection {
+  margin: 0 0 1.25rem;
+  padding: 0.9rem 0.9rem 1rem;
+  border-radius: var(--radius-md);
+  background: var(--glass-bg-soft);
+  border: 1px solid var(--glass-border);
+}
+
+.contactHeading {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--color-cloud);
+  margin: 0 0 0.6rem;
+}
+
+.contactEdit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: left;
+  margin: 0 0 0.9rem;
+}
+
+.contactInput {
+  font-family: var(--font-body);
+  color: var(--color-cloud);
+  background: var(--glass-bg-strong);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.75rem;
+  font-size: 0.88rem;
+  min-width: 0;
+}
+
+.contactInput:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+/* ── Alerta médica: dato fijo y propio, no un dato más de la lista ── */
+
+.addMedicalAlertButton {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.9rem;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1px dashed rgba(224, 66, 79, 0.5);
+  background: rgba(224, 66, 79, 0.06);
+  color: var(--color-danger);
+  cursor: pointer;
+}
+
+.medicalAlertEdit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.medicalAlertLabel {
+  color: var(--color-danger);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.medicalAlertValueInput {
+  font-family: var(--font-body);
+  color: var(--color-cloud);
+  background: var(--glass-bg-strong);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.65rem;
+  font-size: 0.85rem;
+  resize: vertical;
+  min-height: 3.2rem;
+}
+
+.medicalAlertValueInput:focus {
+  outline: none;
+  border-color: var(--color-danger);
+}
+
+/* ── Otros datos libres ── */
 
 .fieldRowEdit {
   align-items: center;
 }
 
 .fieldLabelInput,
-.fieldValueInput,
-.allergyLabelInput,
-.allergyValueInput,
-.contactInput {
+.fieldValueInput {
   font-family: var(--font-body);
   color: var(--color-cloud);
   background: var(--glass-bg-soft);
@@ -45,10 +133,7 @@
 }
 
 .fieldLabelInput:focus,
-.fieldValueInput:focus,
-.allergyLabelInput:focus,
-.allergyValueInput:focus,
-.contactInput:focus {
+.fieldValueInput:focus {
   outline: none;
   border-color: var(--color-accent);
 }
@@ -61,24 +146,6 @@
 
 .fieldValueInput {
   flex: 1 1 50%;
-  font-size: 0.85rem;
-}
-
-.allergyEdit {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.allergyLabelInput {
-  font-weight: 700;
-  font-size: 0.8rem;
-  color: var(--color-danger);
-}
-
-.allergyValueInput {
   font-size: 0.85rem;
 }
 
@@ -97,7 +164,7 @@
 .addFieldButton {
   display: block;
   width: 100%;
-  margin: 0.35rem 0 1.25rem;
+  margin: 0.35rem 0 0;
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 0.82rem;
@@ -107,17 +174,4 @@
   background: transparent;
   color: var(--color-cloud-dim);
   cursor: pointer;
-}
-
-.contactEdit {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin: 0 0 1.25rem;
-  text-align: left;
-}
-
-.contactEdit .contactInput {
-  font-size: 0.9rem;
-  padding: 0.65rem 0.8rem;
 }

@@ -12,8 +12,11 @@ interface Body {
   emergencyPhotoMediaId?: string | null;
   iconMediaId?: string | null;
   lostMode?: boolean;
+  lostZone?: string | null;
   notifyEmail?: string | null;
 }
+
+const MAX_LOST_ZONE = 120;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -66,6 +69,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // falta) y la limpiamos al desactivar — así "activatedAt" siempre
     // refleja la vez más reciente que se marcó como perdida, no la primera.
     patch.lostModeActivatedAt = body.lostMode ? new Date() : null;
+  }
+  if (body.lostZone !== undefined) {
+    if (body.lostZone !== null && body.lostZone.length > MAX_LOST_ZONE) {
+      return NextResponse.json({ error: "La zona es demasiado larga" }, { status: 400 });
+    }
+    patch.lostZone = body.lostZone;
+  } else if (body.lostMode === false) {
+    // Al desactivar sin mandar una zona nueva, se limpia la que hubiera —
+    // si se vuelve a perder más adelante no debería arrastrar una zona
+    // vieja que ya no aplica.
+    patch.lostZone = null;
   }
   if (body.notifyEmail !== undefined) {
     if (body.notifyEmail !== null && !EMAIL_RE.test(body.notifyEmail)) {

@@ -1,0 +1,1 @@
+ALTER TABLE pets ADD COLUMN IF NOT EXISTS lost_zone text;
