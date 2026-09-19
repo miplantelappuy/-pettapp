@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import type { EmergencyFieldRow } from "@/lib/emergency-fields-data";
-import { isAllergyLabel } from "@/lib/emergency-fields-data";
+// OJO: se importa desde ./allergy (no desde emergency-fields-data), a
+// propósito — ese otro archivo también importa el cliente de Postgres, y
+// como este es un componente "use client", arrastrarlo rompe el build (ver
+// el comentario en lib/allergy.ts).
+import { isAllergyLabel } from "@/lib/allergy";
 // OJO: importa el CSS module de la pantalla PÚBLICA de verdad (no una copia
 // aparte) — así el dueño ve literalmente el mismo diseño que ve quien
 // escanea la chapita, en vez de una maqueta chica que puede desactualizarse
