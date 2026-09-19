@@ -1,8 +1,18 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "PettApp",
+};
+
+// Bloquea el pellizco para hacer zoom y el "doble tap" — para que se sienta
+// como una app instalada de verdad, no como una página web que se puede
+// agrandar/achicar. Aplica a toda la app (las tres superficies).
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 // Space Grotesk (display, look moderno/geométrico para el sistema glass) sí

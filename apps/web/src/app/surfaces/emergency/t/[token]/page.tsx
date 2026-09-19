@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
 import { resolveScanView } from "@/lib/qr";
 import { getPetHomeData } from "@/lib/pets-data";
-import { getEmergencyFields } from "@/lib/emergency-fields-data";
+import { getEmergencyFields, isAllergyLabel } from "@/lib/emergency-fields-data";
 import { crossSurfaceUrl, emergencyPath } from "@/lib/env";
 import { EmergencyActions } from "./EmergencyActions";
 import { ActivateTagForm } from "./ActivateTagForm";
@@ -56,6 +56,8 @@ export default async function EmergencyPage({ params }: { params: Promise<{ toke
   const heroUrl = petData?.emergencyPhotoUrl ?? null;
   const isLost = view.view === "lost_mode";
   const emergencyFields = pet ? await getEmergencyFields(pet.id) : [];
+  const allergyFields = emergencyFields.filter((f) => isAllergyLabel(f.label));
+  const otherFields = emergencyFields.filter((f) => !isAllergyLabel(f.label));
 
   return (
     <main className={`${styles.page} ${isLost ? styles.pageAlert : ""}`}>
@@ -85,9 +87,21 @@ export default async function EmergencyPage({ params }: { params: Promise<{ toke
         <h1 className={styles.name}>Hola 🐾 Soy {pet?.name}</h1>
         <p className={styles.subtitle}>Creo que estoy perdido/a. ¿Me ayudás a volver a casa?</p>
 
-        {emergencyFields.length > 0 && (
+        {allergyFields.map((f) => (
+          <div key={f.id} className={styles.allergyAlert}>
+            <span className={styles.allergyIcon} aria-hidden>
+              ⚠️
+            </span>
+            <span className={styles.allergyText}>
+              <strong>{f.label}</strong>
+              {f.value}
+            </span>
+          </div>
+        ))}
+
+        {otherFields.length > 0 && (
           <dl className={styles.fieldsList}>
-            {emergencyFields.map((f) => (
+            {otherFields.map((f) => (
               <div key={f.id} className={styles.fieldRow}>
                 <dt>{f.label}</dt>
                 <dd>{f.value}</dd>

@@ -1,0 +1,123 @@
+/* Este archivo NO redefine el diseño del perfil de emergencia — eso vive en
+   emergency.module.css y se importa tal cual (ver EmergencyCardEditor.tsx),
+   para que el dueño vea exactamente lo mismo que ve quien escanea la
+   chapita. Acá solo van los estilos de los <input> que reemplazan al texto
+   fijo, y el marco/botón que envuelven esa tarjeta dentro de "Gestionar". */
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 560px;
+  margin: 0 auto;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--gradient-app);
+  border: 1px solid var(--glass-border-strong);
+  box-shadow: var(--glass-shadow);
+  padding-bottom: 1.5rem;
+}
+
+.saveButton {
+  display: flex;
+  margin: 1.25rem auto 0;
+}
+
+/* ── Inputs en línea — mismo look "vidrio" que el resto de la app, para que
+   se note que son editables sin dejar de sentirse parte de la tarjeta. */
+
+.fieldRowEdit {
+  align-items: center;
+}
+
+.fieldLabelInput,
+.fieldValueInput,
+.allergyLabelInput,
+.allergyValueInput,
+.contactInput {
+  font-family: var(--font-body);
+  color: var(--color-cloud);
+  background: var(--glass-bg-soft);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.6rem;
+  min-width: 0;
+}
+
+.fieldLabelInput:focus,
+.fieldValueInput:focus,
+.allergyLabelInput:focus,
+.allergyValueInput:focus,
+.contactInput:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.fieldLabelInput {
+  flex: 0 1 38%;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.fieldValueInput {
+  flex: 1 1 50%;
+  font-size: 0.85rem;
+}
+
+.allergyEdit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.allergyLabelInput {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--color-danger);
+}
+
+.allergyValueInput {
+  font-size: 0.85rem;
+}
+
+.removeField {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  width: 1.9rem;
+  height: 1.9rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--glass-bg-soft);
+  color: var(--color-cloud-dim);
+  cursor: pointer;
+}
+
+.addFieldButton {
+  display: block;
+  width: 100%;
+  margin: 0.35rem 0 1.25rem;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--glass-border-strong);
+  background: transparent;
+  color: var(--color-cloud-dim);
+  cursor: pointer;
+}
+
+.contactEdit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0 0 1.25rem;
+  text-align: left;
+}
+
+.contactEdit .contactInput {
+  font-size: 0.9rem;
+  padding: 0.65rem 0.8rem;
+}

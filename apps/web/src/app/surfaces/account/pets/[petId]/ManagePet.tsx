@@ -8,7 +8,7 @@ import type { MilestoneRow } from "@/lib/milestones-data";
 import type { EmergencyFieldRow } from "@/lib/emergency-fields-data";
 import { albumStyles } from "@/app/surfaces/pet/recuerdos/album-styles/registry";
 import { PushOptIn } from "../../PushOptIn";
-import { EmergencyPreview } from "./EmergencyPreview";
+import { EmergencyCardEditor } from "./EmergencyCardEditor";
 import styles from "./ManagePet.module.css";
 
 // Estilos ya nombrados en la visión del producto pero todavía no
@@ -336,12 +336,11 @@ export function ManagePet({
   }
 
   // Datos libres del perfil de emergencia (alergias, dirección, lo que se
-  // le ocurra al dueño). Se editan todos en memoria y se guardan de una — la
-  // vista previa de al lado (EmergencyPreview) se actualiza en cada tecla,
-  // ANTES de guardar nada, así el dueño ve cómo va a quedar antes de
-  // confirmar. id temporal con crypto.randomUUID() para las filas nuevas:
-  // solo se usa como key de React y para encontrar la fila al editar/borrar,
-  // el id de verdad lo asigna el server recién al guardar.
+  // le ocurra al dueño). Se editan todos en memoria — EmergencyCardEditor ya
+  // ES el diseño real, así que cada tecla se ve reflejada ahí mismo, ANTES
+  // de guardar nada. id temporal con crypto.randomUUID() para las filas
+  // nuevas: solo se usa como key de React y para encontrar la fila al
+  // editar/borrar, el id de verdad lo asigna el server recién al guardar.
   function addEmergencyField() {
     setEmergencyFields((list) => [...list, { id: crypto.randomUUID(), label: "", value: "" }]);
   }
@@ -354,24 +353,39 @@ export function ManagePet({
     setEmergencyFields((list) => list.filter((f) => f.id !== id));
   }
 
-  async function saveEmergencyFields() {
+  // Un solo botón guarda TODO el perfil de emergencia de una — el contacto
+  // (nombre/teléfono) y los datos libres (alergias, dirección, etc.) — para
+  // que se sienta como una sola pantalla que se edita y se guarda, no dos
+  // formularios separados con dos botones. Las dos llamadas van en paralelo
+  // porque son endpoints distintos (PATCH de la mascota vs. PUT de sus
+  // datos libres) que no dependen una de la otra.
+  async function saveEmergencyCard(name: string, phone: string) {
+    setPet((p) => ({ ...p, emergencyContactName: name || null, emergencyContactPhone: phone || null }) as PetHomeData);
     if (demoMode) return flash("Guardado (vista previa, no se guarda de verdad)");
     setSavingFields(true);
     try {
-      const res = await fetch(`/api/pets/${petId}/emergency-fields`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fields: emergencyFields.map(({ label, value }) => ({ label, value })) }),
-      });
-      const body = await res.json().catch(() => null);
-      if (!res.ok) return flash(body?.error ?? "No se pudieron guardar los datos");
+      const [contactRes, fieldsRes] = await Promise.all([
+        fetch(`/api/pets/${petId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ emergencyContactName: name || null, emergencyContactPhone: phone || null }),
+        }),
+        fetch(`/api/pets/${petId}/emergency-fields`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fields: emergencyFields.map(({ label, value }) => ({ label, value })) }),
+        }),
+      ]);
+      const fieldsBody = await fieldsRes.json().catch(() => null);
+      if (!fieldsRes.ok) return flash(fieldsBody?.error ?? "No se pudieron guardar los datos");
       // El server ignora filas vacías a medio completar — reflejamos lo que
       // de verdad quedó guardado (con ids de verdad) en vez de lo que había
       // en el formulario.
       setEmergencyFields(
-        (body.fields as { label: string; value: string }[]).map((f) => ({ id: crypto.randomUUID(), ...f })),
+        (fieldsBody.fields as { label: string; value: string }[]).map((f) => ({ id: crypto.randomUUID(), ...f })),
       );
-      flash("Datos de emergencia guardados");
+      if (!contactRes.ok) return flash("Se guardaron los datos, pero no el contacto");
+      flash("Perfil de emergencia guardado");
     } finally {
       setSavingFields(false);
     }
@@ -532,79 +546,32 @@ export function ManagePet({
         </div>
       </section>
 
-      {/* ── Contacto de emergencia + datos libres, con vista previa en vivo ── */}
+      {/* ── Perfil de emergencia — editable directamente sobre su diseño real ── */}
       <section className={`${styles.section} glass`}>
         <h2 className={styles.sectionTitle}>Perfil de emergencia</h2>
         <p className={styles.hint}>
-          Esto es lo que ve quien escanea la chapita física de {pet.name} — junto con la foto marcada como 🚨
-          Emergencia arriba en &quot;Fotos y videos&quot; (siempre una foto, nunca un video, para que esa pantalla se
-          vea siempre igual de rápido). La vista previa de la derecha se actualiza mientras escribís, antes de guardar
-          nada.
+          Esto es exactamente lo que ve quien escanea la chapita física de {pet.name} — tocá cualquier dato para
+          editarlo. La foto es la marcada como 🚨 Emergencia arriba en &quot;Fotos y videos&quot;.
         </p>
 
-        <div className={styles.emergencyEditorGrid}>
-          <div className={styles.emergencyEditorForm}>
-            <EmergencyContactForm
-              name={pet.emergencyContactName ?? ""}
-              phone={pet.emergencyContactPhone ?? ""}
-              onSave={(name, phone) =>
-                patchPet({ emergencyContactName: name || null, emergencyContactPhone: phone || null })
-              }
-              saving={saving}
-            />
+        <EmergencyCardEditor
+          petName={pet.name}
+          photoUrl={pet.emergencyPhotoUrl}
+          contactName={pet.emergencyContactName ?? ""}
+          contactPhone={pet.emergencyContactPhone ?? ""}
+          fields={emergencyFields}
+          saving={savingFields}
+          onAddField={addEmergencyField}
+          onUpdateField={updateEmergencyField}
+          onRemoveField={removeEmergencyField}
+          onSave={saveEmergencyCard}
+        />
 
-            <h3 className={styles.subheading}>Otros datos importantes</h3>
-            <p className={styles.hint}>
-              Alergias, dirección, o lo que se te ocurra que alguien deba saber si encuentra a {pet.name}.
-            </p>
-            <div className={styles.fieldsEditor}>
-              {emergencyFields.map((f) => (
-                <div key={f.id} className={styles.fieldsEditorRow}>
-                  <input
-                    placeholder="Dato (ej: Alergias)"
-                    value={f.label}
-                    onChange={(e) => updateEmergencyField(f.id, { label: e.target.value })}
-                    maxLength={60}
-                  />
-                  <input
-                    placeholder="Detalle (ej: Penicilina)"
-                    value={f.value}
-                    onChange={(e) => updateEmergencyField(f.id, { value: e.target.value })}
-                    maxLength={300}
-                  />
-                  <button type="button" onClick={() => removeEmergencyField(f.id)} aria-label="Eliminar este dato">
-                    ✕
-                  </button>
-                </div>
-              ))}
-              <div className={styles.fieldsEditorActions}>
-                {emergencyFields.length < 12 && (
-                  <button type="button" onClick={addEmergencyField} className={styles.addFieldButton}>
-                    + Agregar dato
-                  </button>
-                )}
-                <button type="button" onClick={saveEmergencyFields} disabled={savingFields} className="accentButton">
-                  {savingFields ? "Guardando…" : "Guardar datos"}
-                </button>
-              </div>
-            </div>
-
-            <a href={emergencyHref} target="_blank" rel="noreferrer" className={styles.panelLink}>
-              {emergencyIsReal
-                ? `Ver el panel de emergencia de ${pet.name} →`
-                : "Ver un ejemplo (todavía no vinculaste una chapita) →"}
-            </a>
-          </div>
-
-          <div className={styles.emergencyEditorPreview}>
-            <EmergencyPreview
-              petName={pet.name}
-              photoUrl={pet.emergencyPhotoUrl}
-              contactPhone={pet.emergencyContactPhone}
-              fields={emergencyFields.filter((f) => f.label.trim() || f.value.trim())}
-            />
-          </div>
-        </div>
+        <a href={emergencyHref} target="_blank" rel="noreferrer" className={styles.panelLink}>
+          {emergencyIsReal
+            ? `Ver el panel de emergencia de ${pet.name} →`
+            : "Ver un ejemplo (todavía no vinculaste una chapita) →"}
+        </a>
       </section>
 
       {/* ── Chapita / QR ── */}
@@ -680,37 +647,6 @@ export function ManagePet({
         <MilestoneForm onAdd={addMilestone} saving={savingMilestone} />
       </section>
     </div>
-  );
-}
-
-function EmergencyContactForm({
-  name,
-  phone,
-  onSave,
-  saving,
-}: {
-  name: string;
-  phone: string;
-  onSave: (name: string, phone: string) => void;
-  saving: boolean;
-}) {
-  const [localName, setLocalName] = useState(name);
-  const [localPhone, setLocalPhone] = useState(phone);
-
-  return (
-    <form
-      className={styles.form}
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSave(localName, localPhone);
-      }}
-    >
-      <input placeholder="Nombre (ej: Facundo)" value={localName} onChange={(e) => setLocalName(e.target.value)} />
-      <input placeholder="Teléfono (ej: +59899123456)" value={localPhone} onChange={(e) => setLocalPhone(e.target.value)} />
-      <button type="submit" disabled={saving}>
-        Guardar
-      </button>
-    </form>
   );
 }
 

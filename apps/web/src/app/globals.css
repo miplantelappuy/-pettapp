@@ -62,6 +62,14 @@ body {
   margin: 0;
 }
 
+html {
+  /* Refuerza el bloqueo de zoom del viewport (layout.tsx): en algunos
+     navegadores el doble-tap todavía puede agrandar la pantalla si un
+     elemento no declara esto — con "manipulation" se saca ese gesto de
+     encima y solo quedan los toques normales, como en una app instalada. */
+  touch-action: manipulation;
+}
+
 body {
   background: var(--gradient-app);
   background-attachment: fixed;

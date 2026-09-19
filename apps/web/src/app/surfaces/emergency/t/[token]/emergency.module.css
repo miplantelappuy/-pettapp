@@ -158,6 +158,43 @@
   color: var(--color-cloud-dim);
 }
 
+/* Alergias: mismo llamado de atención que el resto de la app usa para lo
+   urgente (rojo + ícono), en vez de una línea más de la lista — es
+   justo el dato que alguien necesita leer ANTES de acercarse o de llamar. */
+.allergyAlert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  width: 100%;
+  margin: 0 0 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius-sm);
+  background: rgba(224, 66, 79, 0.12);
+  border: 1px solid rgba(224, 66, 79, 0.35);
+  text-align: left;
+}
+
+.allergyIcon {
+  font-size: 1.2rem;
+  line-height: 1.3;
+  flex-shrink: 0;
+}
+
+.allergyText {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-cloud);
+  min-width: 0;
+}
+
+.allergyText strong {
+  display: block;
+  color: var(--color-danger);
+  font-weight: 700;
+  font-size: 0.8rem;
+  margin-bottom: 0.15rem;
+}
+
 .actionRow {
   display: flex;
   flex-wrap: wrap;
