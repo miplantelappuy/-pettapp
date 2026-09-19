@@ -41,6 +41,14 @@ export default function PreviewEmergencyPage() {
               💬 WhatsApp
             </a>
           </div>
+          <a
+            href="https://www.google.com/maps/search/veterinaria+cerca+de+mi"
+            target="_blank"
+            rel="noreferrer"
+            className={`glassButton ${styles.vetButton}`}
+          >
+            🏥 Veterinario cerca de mí
+          </a>
         </div>
 
         <div className={styles.optionsRow}>

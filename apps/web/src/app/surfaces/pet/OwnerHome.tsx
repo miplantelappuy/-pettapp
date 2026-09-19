@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useScrollReveal } from "@/lib/hooks/useScrollReveal";
+import { describeNextVaccine } from "@/lib/age";
 import type { PetHomeData } from "@/lib/pets-data";
 import type { MilestoneRow } from "@/lib/milestones-data";
 import { GrowthPath } from "./crecimiento/GrowthPath";
@@ -47,6 +48,7 @@ export function OwnerHome({
 }: Props) {
   const speciesLabel = SPECIES_LABEL[pet.species] ?? "compañero";
   const heroIsVideo = pet.heroMedia?.type === "video";
+  const vaccineInfo = describeNextVaccine(nextVaccineDue);
 
   return (
     <main className={styles.page}>
@@ -137,16 +139,39 @@ export function OwnerHome({
       </Reveal>
 
       <Reveal>
-        <section className={`${styles.section} ${styles.panel} glass`}>
-          <span className={styles.eyebrow}>Vacunas</span>
-          <h2 className={styles.panelTitle}>
-            {vaccinationsCount > 0
-              ? `${vaccinationsCount} ${vaccinationsCount === 1 ? "vacuna cargada" : "vacunas cargadas"}`
-              : "Todavía no cargaste vacunas"}
-          </h2>
-          <p className={styles.panelText}>
-            {nextVaccineDue ? `Próxima: ${nextVaccineDue}.` : `El historial completo se carga desde Gestionar.`}
-          </p>
+        <section className={`${styles.section} ${styles.vaccineCard} glassStrong`}>
+          <div className={styles.vaccineHeader}>
+            <span className={styles.vaccineIcon} aria-hidden>
+              💉
+            </span>
+            <div>
+              <span className={styles.eyebrow}>Vacunas</span>
+              <h2 className={styles.panelTitle}>
+                {vaccinationsCount > 0
+                  ? `${vaccinationsCount} ${vaccinationsCount === 1 ? "vacuna cargada" : "vacunas cargadas"}`
+                  : "Todavía no cargaste vacunas"}
+              </h2>
+            </div>
+          </div>
+
+          {vaccineInfo ? (
+            <div className={`${styles.vaccineDueChip} ${styles[`vaccineDue_${vaccineInfo.status}`]}`}>
+              <span className={styles.vaccineDueLabel}>
+                {vaccineInfo.status === "overdue" ? "Vencida" : "Próxima dosis"}
+              </span>
+              <span className={styles.vaccineDueDate}>{vaccineInfo.dateLabel}</span>
+              <span className={styles.vaccineDueDays}>
+                {vaccineInfo.status === "overdue"
+                  ? `hace ${Math.abs(vaccineInfo.daysUntil)} ${Math.abs(vaccineInfo.daysUntil) === 1 ? "día" : "días"}`
+                  : vaccineInfo.daysUntil === 0
+                    ? "hoy"
+                    : `en ${vaccineInfo.daysUntil} ${vaccineInfo.daysUntil === 1 ? "día" : "días"}`}
+              </span>
+            </div>
+          ) : (
+            <p className={styles.panelText}>El historial completo se carga desde Gestionar.</p>
+          )}
+
           <Link href={manageHref} className={styles.panelLink}>
             Ver vacunas →
           </Link>

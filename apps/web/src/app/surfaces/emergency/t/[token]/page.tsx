@@ -118,6 +118,15 @@ export default async function EmergencyPage({ params }: { params: Promise<{ toke
         )}
 
         {pet && <EmergencyActions token={token} petName={pet.name} phone={pet.emergencyContactPhone ?? null} />}
+
+        <a
+          href="https://www.google.com/maps/search/veterinaria+cerca+de+mi"
+          target="_blank"
+          rel="noreferrer"
+          className={`glassButton ${styles.vetButton}`}
+        >
+          🏥 Veterinario cerca de mí
+        </a>
       </div>
 
       {pet && petData && (

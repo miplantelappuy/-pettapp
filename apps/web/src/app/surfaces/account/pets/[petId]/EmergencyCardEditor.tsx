@@ -91,6 +91,11 @@ export function EmergencyCardEditor({
                 💬 WhatsApp
               </span>
             </div>
+            {/* También un botón fijo (no editable) — se muestra igual en el
+                perfil público, ver page.tsx. */}
+            <span className={`glassButton ${cardStyles.vetButton}`} aria-hidden style={{ pointerEvents: "none" }}>
+              🏥 Veterinario cerca de mí
+            </span>
           </div>
 
           {/* ── Alerta médica: un dato fijo y propio, siempre primero ── */}

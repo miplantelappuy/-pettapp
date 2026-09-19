@@ -74,3 +74,36 @@ export function getNextBirthdayInfo(birthDate: string | null | undefined): NextB
   }
   return { isToday: false, target };
 }
+
+export type VaccineDueStatus = "overdue" | "soon" | "ok";
+
+export interface NextVaccineInfo {
+  /** Ya formateada en español ("10 de marzo"), lista para mostrar. */
+  dateLabel: string;
+  /** Puede ser negativo si ya venció. */
+  daysUntil: number;
+  status: VaccineDueStatus;
+}
+
+// Resume la próxima vacuna para la tarjeta del Home — no es una cuenta
+// regresiva en vivo (a diferencia del cumpleaños): un día de diferencia no
+// cambia nada para una vacuna, así que alcanza con calcularlo en cada
+// render, sin useEffect ni segundo a segundo. Mismo parseo a mano que
+// getNextBirthdayInfo, por la misma razón (evitar el corrimiento de día por
+// huso horario de `new Date(str)`).
+export function describeNextVaccine(nextDueAt: string | null | undefined): NextVaccineInfo | null {
+  if (!nextDueAt) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(nextDueAt);
+  if (!match) return null;
+
+  const target = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const daysUntil = Math.round((target.getTime() - today.getTime()) / 86_400_000);
+
+  return {
+    dateLabel: target.toLocaleDateString("es-UY", { day: "numeric", month: "long" }),
+    daysUntil,
+    status: daysUntil < 0 ? "overdue" : daysUntil <= 14 ? "soon" : "ok",
+  };
+}

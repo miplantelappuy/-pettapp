@@ -202,6 +202,99 @@
   text-decoration: none;
 }
 
+/* Vacunas: tarjeta propia (no el .panel genérico) — un ícono + la próxima
+   dosis como un chip de color, en vez de una línea de texto plana, para que
+   de un vistazo se note si hay que llevarla pronto (ámbar) o si ya se pasó
+   la fecha (rojo), sin tener que leer la frase completa. */
+.vaccineCard {
+  padding: 1.6rem 1.75rem;
+  margin-top: 1.5rem;
+}
+
+.vaccineHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 1.1rem;
+}
+
+.vaccineIcon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  font-size: 1.3rem;
+  background: linear-gradient(135deg, rgba(20, 176, 146, 0.16), rgba(139, 123, 247, 0.14));
+}
+
+.vaccineHeader .eyebrow {
+  margin-bottom: 0.2rem;
+}
+
+.vaccineHeader .panelTitle {
+  margin: 0;
+}
+
+.vaccineDueChip {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1rem;
+}
+
+.vaccineDueLabel {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.vaccineDueDate {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--color-cloud);
+}
+
+.vaccineDueDays {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: var(--color-cloud-dim);
+  margin-left: auto;
+}
+
+.vaccineDue_ok {
+  background: rgba(20, 176, 146, 0.12);
+  border: 1px solid rgba(20, 176, 146, 0.3);
+}
+
+.vaccineDue_ok .vaccineDueLabel {
+  color: var(--color-mint);
+}
+
+.vaccineDue_soon {
+  background: rgba(255, 138, 91, 0.12);
+  border: 1px solid rgba(255, 138, 91, 0.32);
+}
+
+.vaccineDue_soon .vaccineDueLabel {
+  color: var(--color-accent);
+}
+
+.vaccineDue_overdue {
+  background: rgba(224, 66, 79, 0.12);
+  border: 1px solid rgba(224, 66, 79, 0.32);
+}
+
+.vaccineDue_overdue .vaccineDueLabel {
+  color: var(--color-danger);
+}
+
 .quickSearchRow {
   display: flex;
   flex-wrap: wrap;
