@@ -340,6 +340,25 @@ export function ManagePet({
     flash("Email de avisos guardado");
   }
 
+  // Fecha de nacimiento (o de llegada a la familia, si no se sabe la real) —
+  // solo alimenta la frase de edad y la cuenta regresiva de cumpleaños del
+  // Home (ver lib/age.ts), no tiene ningún otro efecto. birthDatePrecision
+  // deja avisar cuando no se sabe el día exacto (muchas mascotas son
+  // adoptadas): la cuenta regresiva igual usa el mes/día tal cual estén
+  // cargados, aclarando en el propio formulario que va a ser aproximada.
+  async function saveBirthDate(birthDate: string, precision: string) {
+    setPet((p) => ({ ...p, birthDate: birthDate || null, birthDatePrecision: precision }) as PetHomeData);
+    if (demoMode) return flash("Guardado (vista previa, no se guarda de verdad)");
+    const res = await fetch(`/api/pets/${petId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ birthDate: birthDate || null, birthDatePrecision: precision }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return flash(body?.error ?? "No se pudo guardar la fecha");
+    flash("Fecha de nacimiento guardada");
+  }
+
   // Datos libres del perfil de emergencia (alergias, dirección, lo que se
   // le ocurra al dueño). Se editan todos en memoria — EmergencyCardEditor ya
   // ES el diseño real, así que cada tecla se ve reflejada ahí mismo, ANTES
@@ -462,6 +481,21 @@ export function ManagePet({
             📢 Descargar imagen para compartir en redes →
           </a>
         )}
+      </section>
+
+      {/* ── Cumpleaños ── */}
+      <section className={`${styles.section} glass`}>
+        <h2 className={styles.sectionTitle}>🎂 Cumpleaños</h2>
+        <p className={styles.hint}>
+          Cargá la fecha de nacimiento (o de llegada a la familia) de {pet.name} para activar la cuenta regresiva en
+          el Home. Si no sabés el día exacto, elegí &quot;Solo el mes&quot; o &quot;Solo el año&quot; — igual vas a
+          ver la cuenta regresiva, aclarando que es aproximada.
+        </p>
+        <BirthdayForm
+          birthDate={pet.birthDate ?? ""}
+          precision={pet.birthDatePrecision ?? "exact"}
+          onSave={saveBirthDate}
+        />
       </section>
 
       {/* ── Avisos ── */}
@@ -676,6 +710,44 @@ export function ManagePet({
         <MilestoneForm onAdd={addMilestone} saving={savingMilestone} />
       </section>
     </div>
+  );
+}
+
+function BirthdayForm({
+  birthDate,
+  precision,
+  onSave,
+}: {
+  birthDate: string;
+  precision: string;
+  onSave: (birthDate: string, precision: string) => void;
+}) {
+  const [localDate, setLocalDate] = useState(birthDate);
+  const [localPrecision, setLocalPrecision] = useState(precision);
+
+  return (
+    <form
+      className={styles.form}
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!localDate) return;
+        onSave(localDate, localPrecision);
+      }}
+    >
+      <input type="date" value={localDate} onChange={(e) => setLocalDate(e.target.value)} />
+      <select
+        className={styles.precisionSelect}
+        value={localPrecision}
+        onChange={(e) => setLocalPrecision(e.target.value)}
+      >
+        <option value="exact">Fecha exacta</option>
+        <option value="month">Solo sé el mes</option>
+        <option value="year">Solo sé el año</option>
+      </select>
+      <button type="submit" disabled={!localDate}>
+        Guardar
+      </button>
+    </form>
   );
 }
 

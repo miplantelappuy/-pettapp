@@ -7,6 +7,8 @@ import { albumStyles } from "@/app/surfaces/pet/recuerdos/album-styles/registry"
 interface Body {
   templateId?: string;
   bioPhrase?: string | null;
+  birthDate?: string | null;
+  birthDatePrecision?: "exact" | "month" | "year";
   emergencyContactName?: string | null;
   emergencyContactPhone?: string | null;
   emergencyPhotoMediaId?: string | null;
@@ -19,6 +21,8 @@ interface Body {
 const MAX_LOST_ZONE = 120;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const BIRTH_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const BIRTH_DATE_PRECISIONS = new Set(["exact", "month", "year"]);
 
 // PATCH /api/pets/:petId — edición general que hace el dueño desde "Gestionar
 // mascota": cambiar de estilo de álbum, la frase emocional, y el contacto de
@@ -38,6 +42,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     patch.templateId = body.templateId;
   }
   if (body.bioPhrase !== undefined) patch.bioPhrase = body.bioPhrase;
+  if (body.birthDate !== undefined) {
+    if (body.birthDate !== null && !BIRTH_DATE_RE.test(body.birthDate)) {
+      return NextResponse.json({ error: "Fecha de nacimiento inválida" }, { status: 400 });
+    }
+    patch.birthDate = body.birthDate;
+  }
+  if (body.birthDatePrecision !== undefined) {
+    if (!BIRTH_DATE_PRECISIONS.has(body.birthDatePrecision)) {
+      return NextResponse.json({ error: "Precisión de fecha inválida" }, { status: 400 });
+    }
+    patch.birthDatePrecision = body.birthDatePrecision;
+  }
   if (body.emergencyContactName !== undefined) patch.emergencyContactName = body.emergencyContactName;
   if (body.emergencyContactPhone !== undefined) patch.emergencyContactPhone = body.emergencyContactPhone;
   if (body.emergencyPhotoMediaId !== undefined) {

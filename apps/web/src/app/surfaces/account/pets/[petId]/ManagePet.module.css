@@ -223,6 +223,16 @@
   color: var(--color-cloud);
 }
 
+.precisionSelect {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg-soft);
+  color: var(--color-cloud);
+}
+
 .form button {
   font-family: var(--font-body);
   font-weight: 600;
