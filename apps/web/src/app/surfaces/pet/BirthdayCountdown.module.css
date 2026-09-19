@@ -1,0 +1,149 @@
+.card {
+  position: relative;
+  overflow: hidden;
+  padding: 1.85rem 1.25rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: center;
+}
+
+.confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.confettiHeart {
+  position: absolute;
+  bottom: -1.5rem;
+  font-size: 1rem;
+  opacity: 0;
+  animation: floatUp 7s ease-in-out infinite;
+}
+
+.confettiHeart:nth-child(1) {
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.confettiHeart:nth-child(2) {
+  left: 48%;
+  font-size: 0.85rem;
+  animation-delay: 2.3s;
+}
+
+.confettiHeart:nth-child(3) {
+  left: 82%;
+  font-size: 1.15rem;
+  animation-delay: 4.6s;
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.45;
+  }
+  85% {
+    opacity: 0.25;
+  }
+  100% {
+    transform: translateY(-6rem) rotate(18deg);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confettiHeart {
+    animation: none;
+    opacity: 0.25;
+    bottom: 1rem;
+  }
+}
+
+.cake {
+  font-size: 1.9rem;
+  line-height: 1;
+  animation: cakeBeat 2.2s ease-in-out infinite;
+}
+
+@keyframes cakeBeat {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+  20% {
+    transform: scale(1.14) rotate(-4deg);
+  }
+  40% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cake {
+    animation: none;
+  }
+}
+
+.heading {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--color-cloud-dim);
+  margin: 0;
+}
+
+.digits {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.15rem;
+}
+
+.unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 3.4rem;
+  padding: 0.6rem 0.35rem;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-violet));
+  box-shadow: 0 10px 22px rgba(139, 123, 247, 0.28);
+}
+
+.unitValue {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.55rem;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.unitLabel {
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.88);
+  margin-top: 0.2rem;
+}
+
+.sep {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: var(--color-cloud-dim);
+}
+
+.celebration {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.25rem;
+  color: var(--color-cloud);
+  margin: 0.15rem 0 0;
+}

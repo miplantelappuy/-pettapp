@@ -162,6 +162,13 @@
   margin-top: 1.5rem;
 }
 
+/* La cuenta regresiva de cumpleaños trae su propia tarjeta de vidrio
+   (BirthdayCountdown.module.css) — acá solo va el espaciado de sección,
+   sin duplicar el padding/fondo de .panel encima del suyo. */
+.birthdaySection {
+  margin-top: 1.5rem;
+}
+
 .eyebrow {
   display: block;
   font-family: var(--font-body);

@@ -5,6 +5,7 @@ import { useScrollReveal } from "@/lib/hooks/useScrollReveal";
 import type { PetHomeData } from "@/lib/pets-data";
 import type { MilestoneRow } from "@/lib/milestones-data";
 import { GrowthPath } from "./crecimiento/GrowthPath";
+import { BirthdayCountdown } from "./BirthdayCountdown";
 import styles from "./OwnerHome.module.css";
 
 const SPECIES_LABEL: Record<string, string> = {
@@ -101,6 +102,14 @@ export function OwnerHome({
           </Link>
         </section>
       </Reveal>
+
+      {pet.birthDate && (
+        <Reveal>
+          <section className={`${styles.section} ${styles.birthdaySection}`}>
+            <BirthdayCountdown petName={pet.name} birthDate={pet.birthDate} />
+          </section>
+        </Reveal>
+      )}
 
       <Reveal>
         <section className={`${styles.section} ${styles.panel} glass`}>
