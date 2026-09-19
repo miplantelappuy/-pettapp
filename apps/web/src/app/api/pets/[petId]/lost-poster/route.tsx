@@ -3,12 +3,37 @@ import { ImageResponse } from "next/og";
 import * as QRCode from "qrcode";
 import { assertPetOwnership } from "@/lib/authz";
 import { getPetHomeData, getActiveTagToken } from "@/lib/pets-data";
-import { scanUrlFor } from "@/lib/env";
+import { scanUrlFor, urlFor } from "@/lib/env";
 
 // Corre en Node (no Edge) — igual que el resto de la app (ver ffmpeg-static
 // en video-compress.ts), para no depender de que el runtime Edge esté
 // disponible tal cual en Railway.
 export const runtime = "nodejs";
+
+// satori (el motor de ImageResponse) hace su PROPIO fetch de cualquier <img
+// src> del lado del servidor, sin ningún "origen actual" — por eso exige que
+// sea una URL absoluta, y una relativa como la que devuelve el storage local
+// (/api/media/local-read?key=...) lo tira abajo con "Image source must be an
+// absolute URL" (esto fue justo lo que le pasó a Facundo: la generación
+// entera de la imagen fallaba en cuanto la mascota tenía una foto de
+// emergencia elegida, cosa que antes no probamos con una foto real cargada).
+// Para evitarlo del todo (y de paso no depender de que satori pueda resolver
+// la URL en el momento, sea local o de R2), la foto se resuelve ACÁ, a mano,
+// como un data URI en base64 — si falla por lo que sea (404, sin conexión),
+// se sigue sin foto en vez de tirar abajo todo el cartel.
+async function resolvePhotoDataUrl(url: string | null): Promise<string | null> {
+  if (!url) return null;
+  const absolute = url.startsWith("http") ? url : urlFor(null, url);
+  try {
+    const res = await fetch(absolute);
+    if (!res.ok) return null;
+    const buffer = Buffer.from(await res.arrayBuffer());
+    const contentType = res.headers.get("content-type") ?? "image/jpeg";
+    return `data:${contentType};base64,${buffer.toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
 
 // Genera, al vuelo (no se guarda nada — cada descarga la arma de nuevo con
 // los datos más recientes), una imagen lista para compartir en redes cuando
@@ -25,7 +50,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const pet = check.pet;
 
   const petData = await getPetHomeData(pet.slug);
-  const photoUrl = petData?.emergencyPhotoUrl ?? petData?.iconUrl ?? null;
+  const photoUrl = await resolvePhotoDataUrl(petData?.emergencyPhotoUrl ?? petData?.iconUrl ?? null);
   const activeToken = await getActiveTagToken(petId);
   const qrDataUrl = activeToken ? await QRCode.toDataURL(scanUrlFor(activeToken), { margin: 1, width: 200 }) : null;
   const phone = pet.emergencyContactPhone;
