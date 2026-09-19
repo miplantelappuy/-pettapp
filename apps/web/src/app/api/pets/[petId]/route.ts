@@ -11,6 +11,7 @@ interface Body {
   emergencyContactPhone?: string | null;
   emergencyPhotoMediaId?: string | null;
   iconMediaId?: string | null;
+  lostMode?: boolean;
 }
 
 // PATCH /api/pets/:petId — edición general que hace el dueño desde "Gestionar
@@ -22,7 +23,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
 
   const body = (await request.json()) as Body;
-  const patch: Record<string, string | null> = {};
+  const patch: Record<string, string | boolean | Date | null> = {};
 
   if (body.templateId !== undefined) {
     if (!albumStyles[body.templateId]) {
@@ -55,6 +56,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
     }
     patch.iconMediaId = body.iconMediaId;
+  }
+  if (body.lostMode !== undefined) {
+    patch.lostMode = body.lostMode;
+    // Guardamos cuándo se activó (para mostrarlo más adelante si hace
+    // falta) y la limpiamos al desactivar — así "activatedAt" siempre
+    // refleja la vez más reciente que se marcó como perdida, no la primera.
+    patch.lostModeActivatedAt = body.lostMode ? new Date() : null;
   }
 
   if (Object.keys(patch).length === 0) {

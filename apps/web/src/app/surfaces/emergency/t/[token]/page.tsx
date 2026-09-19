@@ -56,7 +56,13 @@ export default async function EmergencyPage({ params }: { params: Promise<{ toke
   const isLost = view.view === "lost_mode";
 
   return (
-    <main className={styles.page}>
+    <main className={`${styles.page} ${isLost ? styles.pageAlert : ""}`}>
+      {/* Aro rojo pulsante sobre TODA la pantalla — no una franja más, algo
+          que se note de entrada apenas se abre el link, antes incluso de
+          leer una palabra. pointer-events:none para no tapar ningún botón
+          de abajo (es puramente visual). */}
+      {isLost && <div className={styles.alertRing} aria-hidden />}
+
       <div className={styles.heroWrap}>
         {heroUrl ? (
           <img src={heroUrl} alt={pet?.name} className={styles.photo} />
@@ -67,7 +73,12 @@ export default async function EmergencyPage({ params }: { params: Promise<{ toke
       </div>
 
       <div className={`${styles.card} glassStrong`}>
-        {isLost && <div className={styles.lostBanner}>⚠️ {pet?.name} está perdido/a — su familia lo está buscando</div>}
+        {isLost && (
+          <div className={styles.lostBanner}>
+            🚨 {pet?.name} está perdido/a 🚨
+            <span className={styles.lostBannerSub}>Su familia lo está buscando — cualquier dato ayuda</span>
+          </div>
+        )}
 
         <h1 className={styles.name}>Hola 🐾 Soy {pet?.name}</h1>
         <p className={styles.subtitle}>Creo que estoy perdido/a. ¿Me ayudás a volver a casa?</p>

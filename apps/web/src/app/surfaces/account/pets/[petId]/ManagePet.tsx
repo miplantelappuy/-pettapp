@@ -284,6 +284,30 @@ export function ManagePet({
     await fetch(`/api/pets/milestones/${id}`, { method: "DELETE" });
   }
 
+  // Modo perdido: lo único que activa/desactiva la alerta pública (ver
+  // resolveScanView en lib/qr.js) — quien escanea la chapita mientras está
+  // activo ve la pantalla de alerta a pantalla completa en vez del perfil
+  // normal. Pide confirmación en los dos sentidos porque las dos direcciones
+  // tienen consecuencias reales: activarlo dispara una alerta que va a ver
+  // cualquiera que escanee, y desactivarlo la apaga aunque la mascota siga
+  // perdida.
+  async function toggleLostMode() {
+    const next = !pet.lostMode;
+    const confirmMsg = next
+      ? `¿Marcar a ${pet.name} como perdido/a? Quien escanee su chapita va a ver una alerta a pantalla completa hasta que lo desactives.`
+      : `¿Marcar que ${pet.name} ya apareció? Se apaga la alerta en su perfil público.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setPet((p) => ({ ...p, lostMode: next, lostModeActivatedAt: next ? new Date().toISOString() : null }) as PetHomeData);
+    if (demoMode) return flash(next ? "Modo perdido activado (vista previa)" : "Modo perdido desactivado (vista previa)");
+    await fetch(`/api/pets/${petId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lostMode: next }),
+    });
+    flash(next ? "Modo perdido activado" : `¡Qué alegría! Modo perdido desactivado`);
+  }
+
   return (
     <div className={styles.page}>
       {demoMode && (
@@ -300,6 +324,33 @@ export function ManagePet({
 
       <h1 className={styles.title}>Gestionar a {pet.name}</h1>
       {savedFlash && <div className={styles.flash}>{savedFlash}</div>}
+
+      {/* ── Modo perdido ── */}
+      <section className={`${styles.section} glass ${pet.lostMode ? styles.sectionAlert : ""}`}>
+        <h2 className={styles.sectionTitle}>{pet.lostMode ? "🚨 En modo perdido" : "Modo perdido"}</h2>
+        <p className={styles.hint}>
+          {pet.lostMode
+            ? `El perfil público de ${pet.name} está mostrando una alerta a pantalla completa a quien escanee su chapita. Desactivalo apenas aparezca.`
+            : `Si ${pet.name} se perdió, activalo acá: quien escanee su chapita va a ver una alerta bien visible en vez del perfil normal, y vas a poder descargar una imagen lista para compartir en redes.`}
+        </p>
+        <button
+          type="button"
+          className={pet.lostMode ? "glassButton" : "accentButton"}
+          onClick={toggleLostMode}
+        >
+          {pet.lostMode ? `✅ Marcar que ${pet.name} ya apareció` : `🚨 Marcar a ${pet.name} como perdido/a`}
+        </button>
+        {pet.lostMode && !demoMode && (
+          <a
+            href={`/api/pets/${petId}/lost-poster`}
+            download={`${pet.name}-se-busca.png`}
+            className={styles.panelLink}
+            style={{ display: "inline-block", marginTop: "0.85rem" }}
+          >
+            📢 Descargar imagen para compartir en redes →
+          </a>
+        )}
+      </section>
 
       {/* ── Avisos ── */}
       {!demoMode && (

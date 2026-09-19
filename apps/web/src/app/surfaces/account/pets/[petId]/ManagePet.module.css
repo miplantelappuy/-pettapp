@@ -49,6 +49,14 @@
   padding: 1.5rem;
 }
 
+/* Modo perdido activo: la única sección que rompe a propósito el lenguaje
+   glass neutro del resto de la app — tiene que saltar a la vista entre
+   todas las demás, es justo lo contrario de lo que se busca ahí. */
+.sectionAlert {
+  border: 1px solid var(--color-danger);
+  background: rgba(220, 38, 38, 0.08);
+}
+
 .sectionTitle {
   font-family: var(--font-display);
   font-weight: 600;

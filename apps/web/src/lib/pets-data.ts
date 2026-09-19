@@ -42,6 +42,11 @@ export interface PetHomeData {
    * emergencyPhotoUrl (primera foto disponible) para que el ícono nunca
    * quede vacío una vez que hay al menos una foto cargada. */
   iconUrl: string | null;
+  /** true mientras el dueño la marcó como perdida a mano desde Gestionar —
+   * activa el modo alerta en el perfil público (ver resolveScanView en
+   * lib/qr.js) y habilita la imagen para compartir. */
+  lostMode: boolean;
+  lostModeActivatedAt: string | null;
   heroMedia: ResolvedMedia | null;
   media: ResolvedMedia[];
 }
@@ -109,6 +114,8 @@ export async function getPetHomeData(slug: string): Promise<PetHomeData | null> 
     emergencyPhotoUrl,
     iconMediaId: pet.iconMediaId,
     iconUrl,
+    lostMode: pet.lostMode,
+    lostModeActivatedAt: pet.lostModeActivatedAt ? pet.lostModeActivatedAt.toISOString() : null,
     heroMedia,
     media,
   };
