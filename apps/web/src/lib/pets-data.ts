@@ -47,6 +47,9 @@ export interface PetHomeData {
    * lib/qr.js) y habilita la imagen para compartir. */
   lostMode: boolean;
   lostModeActivatedAt: string | null;
+  /** Email opcional para recibir avisos de escaneo además del push (ver
+   * lib/email.ts) — null si el dueño no cargó ninguno. */
+  notifyEmail: string | null;
   heroMedia: ResolvedMedia | null;
   media: ResolvedMedia[];
 }
@@ -116,6 +119,7 @@ export async function getPetHomeData(slug: string): Promise<PetHomeData | null> 
     iconUrl,
     lostMode: pet.lostMode,
     lostModeActivatedAt: pet.lostModeActivatedAt ? pet.lostModeActivatedAt.toISOString() : null,
+    notifyEmail: pet.notifyEmail,
     heroMedia,
     media,
   };

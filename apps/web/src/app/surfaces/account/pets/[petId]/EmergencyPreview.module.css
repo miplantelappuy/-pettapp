@@ -1,0 +1,135 @@
+.frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.notch {
+  width: 70px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--glass-border-strong);
+}
+
+/* Marco tipo "celular" — nada funcional, solo para que se lea claramente
+   como una vista previa y no como una sección más de la página. */
+.screen {
+  width: 100%;
+  max-width: 300px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border-strong);
+  background: var(--gradient-app);
+  box-shadow: var(--glass-shadow);
+  overflow: hidden;
+}
+
+.heroWrap {
+  width: 100%;
+  aspect-ratio: 1;
+}
+
+.photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photoPlaceholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(160deg, var(--color-violet), var(--color-ink));
+}
+
+.card {
+  margin: -1.5rem 0.75rem 0.75rem;
+  position: relative;
+  background: var(--glass-bg-strong);
+  border-radius: var(--radius-md);
+  padding: 1rem 0.9rem 1.1rem;
+  text-align: center;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0 0 0.25rem;
+  color: var(--color-cloud);
+}
+
+.subtitle {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  color: var(--color-cloud-dim);
+  margin: 0 0 0.75rem;
+}
+
+.fieldsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0 0 0.75rem;
+  text-align: left;
+}
+
+.fieldRow {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 8px;
+  background: var(--glass-bg-soft);
+  color: var(--color-cloud);
+}
+
+.fieldRow span {
+  color: var(--color-cloud-dim);
+}
+
+.actionRow {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+}
+
+.fakeButtonAccent,
+.fakeButtonGlass {
+  flex: 1;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.68rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.fakeButtonAccent {
+  background: linear-gradient(135deg, var(--color-accent), #ff6f8f);
+  color: var(--color-accent-ink);
+}
+
+.fakeButtonGlass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-strong);
+  color: var(--color-cloud);
+}
+
+.hintMissing {
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  color: var(--color-danger);
+  margin: 0;
+}
+
+.caption {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  color: var(--color-cloud-dim);
+  text-align: center;
+  margin: 0;
+}

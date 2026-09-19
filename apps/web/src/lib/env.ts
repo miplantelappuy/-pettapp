@@ -46,6 +46,17 @@ export function crossSurfaceUrl(surface: "app" | "tag" | string, path = "/"): st
   return urlFor(surface, path);
 }
 
+// Igual que crossSurfaceUrl, pero SIEMPRE absoluta (con protocolo y host) —
+// para usarse fuera de un navegador con "origen actual" (un email, por
+// ejemplo: un link relativo ahí no significa nada).
+export function absoluteCrossSurfaceUrl(surface: "app" | "tag" | string, path = "/"): string {
+  if (!HAS_CUSTOM_DOMAIN) {
+    const prefix = surface === "app" ? "/app" : surface === "tag" ? "/tag" : `/p/${surface}`;
+    return urlFor(null, `${prefix}${path}`);
+  }
+  return urlFor(surface, path);
+}
+
 // Link RELATIVO (para <Link href>, no para el QR físico) hacia el perfil de
 // emergencia de una chapita o una subruta suya (ej. "/fotos"). OJO: no es un
 // caso más de crossSurfaceUrl — la superficie emergencia tiene una

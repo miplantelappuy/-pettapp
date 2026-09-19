@@ -124,6 +124,40 @@
   margin: 0 0 1.75rem;
 }
 
+/* Datos libres que el dueño agregó (alergias, dirección, lo que sea) —
+   lista simple, en el mismo tono que el subtítulo, ANTES de los botones de
+   contacto: es justo la información que alguien necesita leer antes de
+   llamar. */
+.fieldsList {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0 0 1.5rem;
+  text-align: left;
+}
+
+.fieldRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg-soft);
+}
+
+.fieldRow dt {
+  font-weight: 700;
+  color: var(--color-cloud);
+}
+
+.fieldRow dd {
+  margin: 0;
+  color: var(--color-cloud-dim);
+}
+
 .actionRow {
   display: flex;
   flex-wrap: wrap;

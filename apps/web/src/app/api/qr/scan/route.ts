@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
 import { sendPushToOrganization } from "@/lib/push";
-import { crossSurfaceUrl } from "@/lib/env";
+import { sendScanNotificationEmail } from "@/lib/email";
+import { crossSurfaceUrl, absoluteCrossSurfaceUrl } from "@/lib/env";
 
 interface Body {
   token: string;
@@ -61,6 +62,22 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     // Un fallo al notificar no debe romper el registro del escaneo en sí.
     console.error("No se pudo mandar la notificación push:", err);
+  }
+
+  // Mismo evento, canal aparte — un mail además del push, solo si el dueño
+  // cargó un email para avisos (ver "Avisos" en Gestionar). Nunca debe
+  // romper la respuesta si falla (o si RESEND_API_KEY todavía no está
+  // configurada en Railway — ver lib/email.ts).
+  if (pet.notifyEmail) {
+    try {
+      await sendScanNotificationEmail(pet.notifyEmail, {
+        petName: pet.name,
+        mapsUrl: hasGeo ? `https://maps.google.com/?q=${body.lat},${body.lng}` : null,
+        manageUrl: absoluteCrossSurfaceUrl(pet.slug, "/gestionar"),
+      });
+    } catch (err) {
+      console.error("No se pudo mandar el email de aviso:", err);
+    }
   }
 
   return NextResponse.json({ ok: true }, { status: 201 });

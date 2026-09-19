@@ -46,6 +46,7 @@ export function getDemoPetHomeData(): PetHomeData {
     iconUrl: media[0].url,
     lostMode: false,
     lostModeActivatedAt: null,
+    notifyEmail: null,
     heroMedia: media[0],
     media,
   };

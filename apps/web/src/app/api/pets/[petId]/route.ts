@@ -12,7 +12,10 @@ interface Body {
   emergencyPhotoMediaId?: string | null;
   iconMediaId?: string | null;
   lostMode?: boolean;
+  notifyEmail?: string | null;
 }
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // PATCH /api/pets/:petId — edición general que hace el dueño desde "Gestionar
 // mascota": cambiar de estilo de álbum, la frase emocional, y el contacto de
@@ -63,6 +66,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // falta) y la limpiamos al desactivar — así "activatedAt" siempre
     // refleja la vez más reciente que se marcó como perdida, no la primera.
     patch.lostModeActivatedAt = body.lostMode ? new Date() : null;
+  }
+  if (body.notifyEmail !== undefined) {
+    if (body.notifyEmail !== null && !EMAIL_RE.test(body.notifyEmail)) {
+      return NextResponse.json({ error: "Email inválido" }, { status: 400 });
+    }
+    patch.notifyEmail = body.notifyEmail;
   }
 
   if (Object.keys(patch).length === 0) {

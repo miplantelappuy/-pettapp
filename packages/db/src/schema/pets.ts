@@ -49,6 +49,11 @@ export const pets = pgTable("pets", {
   managePinHash: text("manage_pin_hash"),
   lostMode: boolean("lost_mode").notNull().default(false),
   lostModeActivatedAt: timestamp("lost_mode_activated_at", { withTimezone: true }),
+  // Email opcional para avisos de escaneo (además del push) — separado del
+  // email de una cuenta de verdad (que en el flujo principal ni existe) por
+  // la misma razón que managePinHash: acá no hay usuario/sesión, la mascota
+  // misma guarda todo lo que necesita para avisar a su familia.
+  notifyEmail: text("notify_email"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -130,6 +135,19 @@ export const petGifts = pgTable("pet_gifts", {
   contentType: text("content_type").notNull(),
   senderNote: text("sender_note"),
   openedAt: timestamp("opened_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Datos libres para el perfil de emergencia — "alergia a tal cosa",
+// "dirección", o lo que el dueño quiera agregar (no son campos fijos del
+// producto: cada mascota puede tener los suyos, con el texto que el dueño
+// elija para cada uno). orderIndex conserva el orden en que los cargó.
+export const petEmergencyFields = pgTable("pet_emergency_fields", {
+  id: text("id").primaryKey(),
+  petId: text("pet_id").notNull().references((): AnyPgColumn => pets.id, { onDelete: "cascade" }),
+  label: text("label").notNull(),
+  value: text("value").notNull(),
+  orderIndex: integer("order_index").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

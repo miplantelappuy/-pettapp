@@ -5,8 +5,10 @@ import Link from "next/link";
 import type { PetHomeData, ResolvedMedia } from "@/lib/pets-data";
 import type { VaccinationRow } from "@/lib/vaccinations-data";
 import type { MilestoneRow } from "@/lib/milestones-data";
+import type { EmergencyFieldRow } from "@/lib/emergency-fields-data";
 import { albumStyles } from "@/app/surfaces/pet/recuerdos/album-styles/registry";
 import { PushOptIn } from "../../PushOptIn";
+import { EmergencyPreview } from "./EmergencyPreview";
 import styles from "./ManagePet.module.css";
 
 // Estilos ya nombrados en la visión del producto pero todavía no
@@ -52,6 +54,9 @@ interface Props {
    * ubicación (ver lib/pets-data.ts#getLastSharedScan) — null si nunca pasó
    * (todavía, o porque quien escaneó no la compartió esa vez). */
   lastScan?: { lat: number; lng: number; scannedAt: string } | null;
+  /** Datos libres del perfil de emergencia (alergias, dirección, lo que sea)
+   * — ver lib/emergency-fields-data.ts. */
+  initialEmergencyFields?: EmergencyFieldRow[];
 }
 
 export function ManagePet({
@@ -65,11 +70,14 @@ export function ManagePet({
   emergencyIsReal = false,
   qrDataUrl = null,
   lastScan = null,
+  initialEmergencyFields = [],
 }: Props) {
   const [pet, setPet] = useState(initialPet);
   const [media, setMedia] = useState<ResolvedMedia[]>(initialPet.media);
   const [vaccinations, setVaccinations] = useState<VaccinationRow[]>(initialVaccinations);
   const [milestones, setMilestones] = useState<MilestoneRow[]>(initialMilestones);
+  const [emergencyFields, setEmergencyFields] = useState<EmergencyFieldRow[]>(initialEmergencyFields);
+  const [savingFields, setSavingFields] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState<string | null>(null);
   const [processingVideo, setProcessingVideo] = useState(false);
@@ -308,6 +316,67 @@ export function ManagePet({
     flash(next ? "Modo perdido activado" : `¡Qué alegría! Modo perdido desactivado`);
   }
 
+  // Email opcional para avisos de escaneo, además del push (ver lib/email.ts
+  // — necesita RESEND_API_KEY/EMAIL_FROM configuradas en Railway para
+  // mandar de verdad, si no solo queda en el registro del servidor). El
+  // servidor valida el formato — si lo rechaza, se lo mostramos al dueño en
+  // vez de fingir que se guardó.
+  async function saveNotifyEmail(email: string) {
+    const trimmed = email.trim();
+    setPet((p) => ({ ...p, notifyEmail: trimmed || null }) as PetHomeData);
+    if (demoMode) return flash("Guardado (vista previa, no se guarda de verdad)");
+    const res = await fetch(`/api/pets/${petId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notifyEmail: trimmed || null }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return flash(body?.error ?? "No se pudo guardar el email");
+    flash("Email de avisos guardado");
+  }
+
+  // Datos libres del perfil de emergencia (alergias, dirección, lo que se
+  // le ocurra al dueño). Se editan todos en memoria y se guardan de una — la
+  // vista previa de al lado (EmergencyPreview) se actualiza en cada tecla,
+  // ANTES de guardar nada, así el dueño ve cómo va a quedar antes de
+  // confirmar. id temporal con crypto.randomUUID() para las filas nuevas:
+  // solo se usa como key de React y para encontrar la fila al editar/borrar,
+  // el id de verdad lo asigna el server recién al guardar.
+  function addEmergencyField() {
+    setEmergencyFields((list) => [...list, { id: crypto.randomUUID(), label: "", value: "" }]);
+  }
+
+  function updateEmergencyField(id: string, patch: Partial<Pick<EmergencyFieldRow, "label" | "value">>) {
+    setEmergencyFields((list) => list.map((f) => (f.id === id ? { ...f, ...patch } : f)));
+  }
+
+  function removeEmergencyField(id: string) {
+    setEmergencyFields((list) => list.filter((f) => f.id !== id));
+  }
+
+  async function saveEmergencyFields() {
+    if (demoMode) return flash("Guardado (vista previa, no se guarda de verdad)");
+    setSavingFields(true);
+    try {
+      const res = await fetch(`/api/pets/${petId}/emergency-fields`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fields: emergencyFields.map(({ label, value }) => ({ label, value })) }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) return flash(body?.error ?? "No se pudieron guardar los datos");
+      // El server ignora filas vacías a medio completar — reflejamos lo que
+      // de verdad quedó guardado (con ids de verdad) en vez de lo que había
+      // en el formulario.
+      setEmergencyFields(
+        (body.fields as { label: string; value: string }[]).map((f) => ({ id: crypto.randomUUID(), ...f })),
+      );
+      flash("Datos de emergencia guardados");
+    } finally {
+      setSavingFields(false);
+    }
+  }
+
   return (
     <div className={styles.page}>
       {demoMode && (
@@ -361,6 +430,13 @@ export function ManagePet({
             ubicación aproximada, cuando la persona que la encontró decida compartirla.
           </p>
           <PushOptIn petId={petId} />
+          <div style={{ marginTop: "0.85rem" }}>
+            <p className={styles.hint}>
+              Además del push, podés recibir un email cada vez que escaneen la chapita de {pet.name} (con la
+              ubicación, cuando la compartan).
+            </p>
+            <NotifyEmailForm email={pet.notifyEmail ?? ""} onSave={saveNotifyEmail} />
+          </div>
           {lastScan && (
             <p className={styles.hint} style={{ marginTop: "0.75rem" }}>
               📍 Última ubicación compartida: {new Date(lastScan.scannedAt).toLocaleString("es-UY")} —{" "}
@@ -456,23 +532,79 @@ export function ManagePet({
         </div>
       </section>
 
-      {/* ── Contacto de emergencia ── */}
+      {/* ── Contacto de emergencia + datos libres, con vista previa en vivo ── */}
       <section className={`${styles.section} glass`}>
-        <h2 className={styles.sectionTitle}>Contacto de emergencia</h2>
+        <h2 className={styles.sectionTitle}>Perfil de emergencia</h2>
         <p className={styles.hint}>
           Esto es lo que ve quien escanea la chapita física de {pet.name} — junto con la foto marcada como 🚨
           Emergencia arriba en &quot;Fotos y videos&quot; (siempre una foto, nunca un video, para que esa pantalla se
-          vea siempre igual de rápido).
+          vea siempre igual de rápido). La vista previa de la derecha se actualiza mientras escribís, antes de guardar
+          nada.
         </p>
-        <EmergencyContactForm
-          name={pet.emergencyContactName ?? ""}
-          phone={pet.emergencyContactPhone ?? ""}
-          onSave={(name, phone) => patchPet({ emergencyContactName: name || null, emergencyContactPhone: phone || null })}
-          saving={saving}
-        />
-        <a href={emergencyHref} target="_blank" rel="noreferrer" className={styles.panelLink}>
-          {emergencyIsReal ? `Ver el panel de emergencia de ${pet.name} →` : "Ver un ejemplo (todavía no vinculaste una chapita) →"}
-        </a>
+
+        <div className={styles.emergencyEditorGrid}>
+          <div className={styles.emergencyEditorForm}>
+            <EmergencyContactForm
+              name={pet.emergencyContactName ?? ""}
+              phone={pet.emergencyContactPhone ?? ""}
+              onSave={(name, phone) =>
+                patchPet({ emergencyContactName: name || null, emergencyContactPhone: phone || null })
+              }
+              saving={saving}
+            />
+
+            <h3 className={styles.subheading}>Otros datos importantes</h3>
+            <p className={styles.hint}>
+              Alergias, dirección, o lo que se te ocurra que alguien deba saber si encuentra a {pet.name}.
+            </p>
+            <div className={styles.fieldsEditor}>
+              {emergencyFields.map((f) => (
+                <div key={f.id} className={styles.fieldsEditorRow}>
+                  <input
+                    placeholder="Dato (ej: Alergias)"
+                    value={f.label}
+                    onChange={(e) => updateEmergencyField(f.id, { label: e.target.value })}
+                    maxLength={60}
+                  />
+                  <input
+                    placeholder="Detalle (ej: Penicilina)"
+                    value={f.value}
+                    onChange={(e) => updateEmergencyField(f.id, { value: e.target.value })}
+                    maxLength={300}
+                  />
+                  <button type="button" onClick={() => removeEmergencyField(f.id)} aria-label="Eliminar este dato">
+                    ✕
+                  </button>
+                </div>
+              ))}
+              <div className={styles.fieldsEditorActions}>
+                {emergencyFields.length < 12 && (
+                  <button type="button" onClick={addEmergencyField} className={styles.addFieldButton}>
+                    + Agregar dato
+                  </button>
+                )}
+                <button type="button" onClick={saveEmergencyFields} disabled={savingFields} className="accentButton">
+                  {savingFields ? "Guardando…" : "Guardar datos"}
+                </button>
+              </div>
+            </div>
+
+            <a href={emergencyHref} target="_blank" rel="noreferrer" className={styles.panelLink}>
+              {emergencyIsReal
+                ? `Ver el panel de emergencia de ${pet.name} →`
+                : "Ver un ejemplo (todavía no vinculaste una chapita) →"}
+            </a>
+          </div>
+
+          <div className={styles.emergencyEditorPreview}>
+            <EmergencyPreview
+              petName={pet.name}
+              photoUrl={pet.emergencyPhotoUrl}
+              contactPhone={pet.emergencyContactPhone}
+              fields={emergencyFields.filter((f) => f.label.trim() || f.value.trim())}
+            />
+          </div>
+        </div>
       </section>
 
       {/* ── Chapita / QR ── */}
@@ -578,6 +710,28 @@ function EmergencyContactForm({
       <button type="submit" disabled={saving}>
         Guardar
       </button>
+    </form>
+  );
+}
+
+function NotifyEmailForm({ email, onSave }: { email: string; onSave: (email: string) => void }) {
+  const [localEmail, setLocalEmail] = useState(email);
+
+  return (
+    <form
+      className={styles.form}
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSave(localEmail);
+      }}
+    >
+      <input
+        type="email"
+        placeholder="tu@email.com"
+        value={localEmail}
+        onChange={(e) => setLocalEmail(e.target.value)}
+      />
+      <button type="submit">Guardar</button>
     </form>
   );
 }
