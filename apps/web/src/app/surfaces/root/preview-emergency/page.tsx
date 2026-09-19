@@ -1,4 +1,5 @@
 import { getDemoPetHomeData } from "@/lib/demo-pet";
+import { formatPetAge } from "@/lib/age";
 import { ActivateTagForm } from "../../emergency/t/[token]/ActivateTagForm";
 import { PreviewBanner } from "../PreviewBanner";
 import styles from "../../emergency/t/[token]/emergency.module.css";
@@ -9,6 +10,16 @@ import styles from "../../emergency/t/[token]/emergency.module.css";
 // chapita muestra solo una de las dos, según su estado.
 export default function PreviewEmergencyPage() {
   const pet = getDemoPetHomeData();
+
+  const basicInfoChips: string[] = [];
+  if (pet.showBasicInfoPublic) {
+    if (pet.breed) basicInfoChips.push(pet.breed);
+    if (pet.sex === "male") basicInfoChips.push("Macho");
+    if (pet.sex === "female") basicInfoChips.push("Hembra");
+    const ageLabel = formatPetAge(pet.birthDate, pet.birthDatePrecision);
+    if (ageLabel) basicInfoChips.push(ageLabel);
+    if (pet.weightKg) basicInfoChips.push(`${Number(pet.weightKg)} kg`);
+  }
 
   return (
     <>
@@ -33,6 +44,15 @@ export default function PreviewEmergencyPage() {
         <div className={`${styles.card} glassStrong`}>
           <h1 className={styles.name}>Hola 🐾 Soy {pet.name}</h1>
           <p className={styles.subtitle}>Creo que estoy perdido/a. ¿Me ayudás a volver a casa?</p>
+          {basicInfoChips.length > 0 && (
+            <div className={styles.basicInfoRow}>
+              {basicInfoChips.map((chip) => (
+                <span key={chip} className={styles.basicInfoChip}>
+                  {chip}
+                </span>
+              ))}
+            </div>
+          )}
           <div className={styles.actionRow}>
             <a href={`tel:${pet.emergencyContactPhone}`} className="accentButton">
               📞 Llamar a mi familia

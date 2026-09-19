@@ -9,6 +9,7 @@ import type { EmergencyFieldRow } from "@/lib/emergency-fields-data";
 import { albumStyles } from "@/app/surfaces/pet/recuerdos/album-styles/registry";
 import { PushOptIn } from "../../PushOptIn";
 import { EmergencyCardEditor } from "./EmergencyCardEditor";
+import { LostPosterPreview } from "./LostPosterPreview";
 import styles from "./ManagePet.module.css";
 
 // Estilos ya nombrados en la visión del producto pero todavía no
@@ -359,6 +360,36 @@ export function ManagePet({
     flash("Fecha de nacimiento guardada");
   }
 
+  // Raza/sexo/peso — "de ficha", separados de la fecha de nacimiento porque
+  // ya tenía su propia sección — con un solo interruptor que decide si
+  // aparecen (junto con la edad, calculada de la fecha de nacimiento) en el
+  // perfil público de emergencia. Mismo criterio que el resto del panel: un
+  // solo botón guarda todo junto.
+  async function saveBasicInfo(breed: string, sex: string, weightKg: string, showPublic: boolean) {
+    const trimmedBreed = breed.trim() || null;
+    const sexValue = sex || null;
+    const weightNum = weightKg.trim() ? Number(weightKg) : null;
+    setPet(
+      (p) =>
+        ({
+          ...p,
+          breed: trimmedBreed,
+          sex: sexValue,
+          weightKg: weightNum !== null ? String(weightNum) : null,
+          showBasicInfoPublic: showPublic,
+        }) as PetHomeData,
+    );
+    if (demoMode) return flash("Guardado (vista previa, no se guarda de verdad)");
+    const res = await fetch(`/api/pets/${petId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ breed: trimmedBreed, sex: sexValue, weightKg: weightNum, showBasicInfoPublic: showPublic }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return flash(body?.error ?? "No se pudieron guardar los datos");
+    flash("Datos guardados");
+  }
+
   // Datos libres del perfil de emergencia (alergias, dirección, lo que se
   // le ocurra al dueño). Se editan todos en memoria — EmergencyCardEditor ya
   // ES el diseño real, así que cada tecla se ve reflejada ahí mismo, ANTES
@@ -471,16 +502,7 @@ export function ManagePet({
         >
           {pet.lostMode ? `✅ Marcar que ${pet.name} ya apareció` : `🚨 Marcar a ${pet.name} como perdido/a`}
         </button>
-        {pet.lostMode && !demoMode && (
-          <a
-            href={`/api/pets/${petId}/lost-poster`}
-            download={`${pet.name}-se-busca.png`}
-            className={styles.panelLink}
-            style={{ display: "inline-block", marginTop: "0.85rem" }}
-          >
-            📢 Descargar imagen para compartir en redes →
-          </a>
-        )}
+        {pet.lostMode && !demoMode && <LostPosterPreview petId={petId} petName={pet.name} />}
       </section>
 
       {/* ── Cumpleaños ── */}
@@ -495,6 +517,22 @@ export function ManagePet({
           birthDate={pet.birthDate ?? ""}
           precision={pet.birthDatePrecision ?? "exact"}
           onSave={saveBirthDate}
+        />
+      </section>
+
+      {/* ── Datos básicos ── */}
+      <section className={`${styles.section} glass`}>
+        <h2 className={styles.sectionTitle}>🐾 Datos básicos</h2>
+        <p className={styles.hint}>
+          Raza, sexo y peso de {pet.name} — opcionales. Si querés, podés mostrarlos (junto con la edad) en el perfil
+          de emergencia, para que quien encuentre a {pet.name} tenga más para reconocerla.
+        </p>
+        <BasicInfoForm
+          breed={pet.breed ?? ""}
+          sex={pet.sex ?? ""}
+          weightKg={pet.weightKg ?? ""}
+          showPublic={pet.showBasicInfoPublic}
+          onSave={saveBasicInfo}
         />
       </section>
 
@@ -620,6 +658,12 @@ export function ManagePet({
         <EmergencyCardEditor
           petName={pet.name}
           photoUrl={pet.emergencyPhotoUrl}
+          breed={pet.breed}
+          sex={pet.sex}
+          weightKg={pet.weightKg}
+          birthDate={pet.birthDate}
+          birthDatePrecision={pet.birthDatePrecision}
+          showBasicInfoPublic={pet.showBasicInfoPublic}
           contactName={pet.emergencyContactName ?? ""}
           contactPhone={pet.emergencyContactPhone ?? ""}
           fields={emergencyFields}
@@ -747,6 +791,65 @@ function BirthdayForm({
       <button type="submit" disabled={!localDate}>
         Guardar
       </button>
+    </form>
+  );
+}
+
+function BasicInfoForm({
+  breed,
+  sex,
+  weightKg,
+  showPublic,
+  onSave,
+}: {
+  breed: string;
+  sex: string;
+  weightKg: string;
+  showPublic: boolean;
+  onSave: (breed: string, sex: string, weightKg: string, showPublic: boolean) => void;
+}) {
+  const [localBreed, setLocalBreed] = useState(breed);
+  const [localSex, setLocalSex] = useState(sex);
+  const [localWeight, setLocalWeight] = useState(weightKg);
+  const [localShowPublic, setLocalShowPublic] = useState(showPublic);
+
+  return (
+    <form
+      className={styles.form}
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSave(localBreed, localSex, localWeight, localShowPublic);
+      }}
+    >
+      <input
+        placeholder="Raza (ej: Golden retriever)"
+        value={localBreed}
+        onChange={(e) => setLocalBreed(e.target.value)}
+        maxLength={60}
+      />
+      <select className={styles.precisionSelect} value={localSex} onChange={(e) => setLocalSex(e.target.value)}>
+        <option value="">Sexo (no especificado)</option>
+        <option value="male">Macho</option>
+        <option value="female">Hembra</option>
+      </select>
+      <input
+        type="number"
+        placeholder="Peso (kg)"
+        value={localWeight}
+        onChange={(e) => setLocalWeight(e.target.value)}
+        min={0}
+        max={200}
+        step="0.1"
+      />
+      <label className={styles.checkboxRow}>
+        <input
+          type="checkbox"
+          checked={localShowPublic}
+          onChange={(e) => setLocalShowPublic(e.target.checked)}
+        />
+        Mostrar estos datos (y la edad) en el perfil de emergencia
+      </label>
+      <button type="submit">Guardar</button>
     </form>
   );
 }

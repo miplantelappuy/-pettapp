@@ -158,6 +158,29 @@
   color: var(--color-cloud-dim);
 }
 
+/* Datos básicos (raza, sexo, edad, peso) — el dueño elige si aparecen acá o
+   no, todos juntos (ver ManagePet > Datos básicos). Chips cortos en vez de
+   una lista con etiqueta al lado de cada uno: son datos de identificación
+   rápida, se leen de un vistazo antes de leer nada más. */
+.basicInfoRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: 100%;
+  margin: 0 0 1.1rem;
+}
+
+.basicInfoChip {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  background: var(--glass-bg-soft);
+  border: 1px solid var(--glass-border);
+  color: var(--color-cloud);
+}
+
 /* Alergias: mismo llamado de atención que el resto de la app usa para lo
    urgente (rojo + pulso, ver .alertRing/.lostBanner) en vez de una línea más
    de la lista — es justo el dato que alguien necesita leer ANTES de

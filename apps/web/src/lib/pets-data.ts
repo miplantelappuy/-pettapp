@@ -23,8 +23,17 @@ export interface PetHomeData {
   name: string;
   species: string;
   bioPhrase: string | null;
+  breed: string | null;
+  sex: string | null;
+  /** String, no number — viene tal cual del driver (columna numeric, mismo
+   * criterio que lat/lng en qr_scans). null si no se cargó. */
+  weightKg: string | null;
   birthDate: string | null;
   birthDatePrecision: string;
+  /** true si el dueño eligió mostrar raza/sexo/edad/peso en el perfil
+   * público de emergencia (ver ManagePet > Datos básicos) — un solo
+   * interruptor para los cuatro datos juntos. */
+  showBasicInfoPublic: boolean;
   templateId: string;
   emergencyContactName: string | null;
   emergencyContactPhone: string | null;
@@ -111,8 +120,12 @@ export async function getPetHomeData(slug: string): Promise<PetHomeData | null> 
     name: pet.name,
     species: pet.species,
     bioPhrase: pet.bioPhrase,
+    breed: pet.breed,
+    sex: pet.sex,
+    weightKg: pet.weightKg,
     birthDate: pet.birthDate,
     birthDatePrecision: pet.birthDatePrecision,
+    showBasicInfoPublic: pet.showBasicInfoPublic,
     templateId: pet.templateId,
     emergencyContactName: pet.emergencyContactName,
     emergencyContactPhone: pet.emergencyContactPhone,

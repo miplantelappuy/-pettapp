@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatPetAge } from "@/lib/age";
 import type { EmergencyFieldRow } from "@/lib/emergency-fields-data";
 // OJO: importa el CSS module de la pantalla PÚBLICA de verdad (no una copia
 // aparte) — así el dueño ve literalmente el mismo diseño que ve quien
@@ -12,6 +13,16 @@ import styles from "./EmergencyCardEditor.module.css";
 interface Props {
   petName: string;
   photoUrl: string | null;
+  /** Raza/sexo/peso/edad — de solo lectura acá (se editan desde "Datos
+   * básicos" en ManagePet, igual que la foto se elige desde "Fotos y
+   * videos"): esto es nada más el espejo de cómo se van a ver si el dueño
+   * activa showBasicInfoPublic. */
+  breed: string | null;
+  sex: string | null;
+  weightKg: string | null;
+  birthDate: string | null;
+  birthDatePrecision: string;
+  showBasicInfoPublic: boolean;
   contactName: string;
   contactPhone: string;
   fields: EmergencyFieldRow[];
@@ -27,6 +38,12 @@ const MAX_FIELDS = 12;
 export function EmergencyCardEditor({
   petName,
   photoUrl,
+  breed,
+  sex,
+  weightKg,
+  birthDate,
+  birthDatePrecision,
+  showBasicInfoPublic,
   contactName,
   contactPhone,
   fields,
@@ -44,6 +61,20 @@ export function EmergencyCardEditor({
   const medicalAlert = fields.find((f) => f.kind === "medical_alert") ?? null;
   const customFields = fields.filter((f) => f.kind !== "medical_alert");
 
+  // Mismo cálculo que en la pantalla pública (page.tsx) — se repite acá en
+  // vez de recibirlo ya armado porque tiene que actualizarse solo con lo que
+  // ya está guardado (breed/sex/weightKg/birthDate vienen de afuera, no se
+  // editan en este componente).
+  const basicInfoChips: string[] = [];
+  if (showBasicInfoPublic) {
+    if (breed) basicInfoChips.push(breed);
+    if (sex === "male") basicInfoChips.push("Macho");
+    if (sex === "female") basicInfoChips.push("Hembra");
+    const ageLabel = formatPetAge(birthDate, birthDatePrecision);
+    if (ageLabel) basicInfoChips.push(ageLabel);
+    if (weightKg) basicInfoChips.push(`${Number(weightKg)} kg`);
+  }
+
   return (
     <div>
       <div className={styles.wrap}>
@@ -59,6 +90,16 @@ export function EmergencyCardEditor({
         <div className={`${cardStyles.card} glassStrong`}>
           <p className={cardStyles.name}>Hola 🐾 Soy {petName || "tu mascota"}</p>
           <p className={cardStyles.subtitle}>Creo que estoy perdido/a. ¿Me ayudás a volver a casa?</p>
+
+          {basicInfoChips.length > 0 && (
+            <div className={cardStyles.basicInfoRow}>
+              {basicInfoChips.map((chip) => (
+                <span key={chip} className={cardStyles.basicInfoChip}>
+                  {chip}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* ── Contacto: aparte, no es "un dato más" ── */}
           <div className={styles.contactSection}>

@@ -7,8 +7,12 @@ import { albumStyles } from "@/app/surfaces/pet/recuerdos/album-styles/registry"
 interface Body {
   templateId?: string;
   bioPhrase?: string | null;
+  breed?: string | null;
+  sex?: "male" | "female" | "unknown" | null;
+  weightKg?: number | null;
   birthDate?: string | null;
   birthDatePrecision?: "exact" | "month" | "year";
+  showBasicInfoPublic?: boolean;
   emergencyContactName?: string | null;
   emergencyContactPhone?: string | null;
   emergencyPhotoMediaId?: string | null;
@@ -19,10 +23,13 @@ interface Body {
 }
 
 const MAX_LOST_ZONE = 120;
+const MAX_BREED = 60;
+const MAX_WEIGHT_KG = 200;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const BIRTH_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const BIRTH_DATE_PRECISIONS = new Set(["exact", "month", "year"]);
+const SEX_VALUES = new Set(["male", "female", "unknown"]);
 
 // PATCH /api/pets/:petId — edición general que hace el dueño desde "Gestionar
 // mascota": cambiar de estilo de álbum, la frase emocional, y el contacto de
@@ -53,6 +60,32 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: "Precisión de fecha inválida" }, { status: 400 });
     }
     patch.birthDatePrecision = body.birthDatePrecision;
+  }
+  if (body.breed !== undefined) {
+    if (body.breed !== null && body.breed.length > MAX_BREED) {
+      return NextResponse.json({ error: "La raza es demasiado larga" }, { status: 400 });
+    }
+    patch.breed = body.breed;
+  }
+  if (body.sex !== undefined) {
+    if (body.sex !== null && !SEX_VALUES.has(body.sex)) {
+      return NextResponse.json({ error: "Sexo inválido" }, { status: 400 });
+    }
+    patch.sex = body.sex;
+  }
+  if (body.weightKg !== undefined) {
+    if (body.weightKg === null) {
+      patch.weightKg = null;
+    } else if (typeof body.weightKg !== "number" || Number.isNaN(body.weightKg) || body.weightKg <= 0 || body.weightKg > MAX_WEIGHT_KG) {
+      return NextResponse.json({ error: "Peso inválido" }, { status: 400 });
+    } else {
+      // La columna es numeric — el driver espera un string, no un number
+      // (mismo criterio que lat/lng en /api/qr/scan).
+      patch.weightKg = String(body.weightKg);
+    }
+  }
+  if (body.showBasicInfoPublic !== undefined) {
+    patch.showBasicInfoPublic = body.showBasicInfoPublic;
   }
   if (body.emergencyContactName !== undefined) patch.emergencyContactName = body.emergencyContactName;
   if (body.emergencyContactPhone !== undefined) patch.emergencyContactPhone = body.emergencyContactPhone;

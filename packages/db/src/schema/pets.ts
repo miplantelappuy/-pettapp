@@ -20,6 +20,10 @@ export const pets = pgTable("pets", {
   species: text("species").notNull(), // 'dog' | 'cat' | 'other'
   breed: text("breed"),
   sex: text("sex"), // 'male' | 'female' | 'unknown'
+  // Numeric (no integer) porque una mascota chica puede pesar menos de 1kg —
+  // se guarda como string desde el driver (como lat/lng en qr_scans), se
+  // formatea recién en la UI.
+  weightKg: numeric("weight_kg"),
   birthDate: date("birth_date"),
   birthDatePrecision: text("birth_date_precision").notNull().default("exact"), // exact | month | year
   bioPhrase: text("bio_phrase"),
@@ -61,6 +65,12 @@ export const pets = pgTable("pets", {
   // la misma razón que managePinHash: acá no hay usuario/sesión, la mascota
   // misma guarda todo lo que necesita para avisar a su familia.
   notifyEmail: text("notify_email"),
+  // Raza/sexo/edad/peso son datos "de ficha", separados a propósito de si
+  // aparecen o no en el perfil público de emergencia — el dueño decide con
+  // este único interruptor (no uno por dato: si querés compartirlos, los
+  // compartís todos juntos). false por default: nada se muestra de más
+  // hasta que el dueño lo pida.
+  showBasicInfoPublic: boolean("show_basic_info_public").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

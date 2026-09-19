@@ -3,6 +3,7 @@ import { db, schema } from "@pettapp/db";
 import { resolveScanView } from "@/lib/qr";
 import { getPetHomeData } from "@/lib/pets-data";
 import { getEmergencyFields } from "@/lib/emergency-fields-data";
+import { formatPetAge } from "@/lib/age";
 import { crossSurfaceUrl, emergencyPath } from "@/lib/env";
 import { EmergencyActions } from "./EmergencyActions";
 import { ActivateTagForm } from "./ActivateTagForm";
@@ -62,6 +63,20 @@ export default async function EmergencyPage({ params }: { params: Promise<{ toke
   const medicalAlert = emergencyFields.find((f) => f.kind === "medical_alert") ?? null;
   const otherFields = emergencyFields.filter((f) => f.kind !== "medical_alert");
 
+  // Raza/sexo/edad/peso — el dueño decide con un solo interruptor
+  // (showBasicInfoPublic) si se muestran acá, todos juntos (ver
+  // ManagePet > Datos básicos). Cada uno se agrega solo si el dueño lo
+  // cargó, no hace falta que estén los cuatro.
+  const basicInfoChips: string[] = [];
+  if (petData?.showBasicInfoPublic) {
+    if (petData.breed) basicInfoChips.push(petData.breed);
+    if (petData.sex === "male") basicInfoChips.push("Macho");
+    if (petData.sex === "female") basicInfoChips.push("Hembra");
+    const ageLabel = formatPetAge(petData.birthDate, petData.birthDatePrecision);
+    if (ageLabel) basicInfoChips.push(ageLabel);
+    if (petData.weightKg) basicInfoChips.push(`${Number(petData.weightKg)} kg`);
+  }
+
   return (
     <main className={`${styles.page} ${isLost ? styles.pageAlert : ""}`}>
       {/* Aro rojo pulsante sobre TODA la pantalla — no una franja más, algo
@@ -93,6 +108,16 @@ export default async function EmergencyPage({ params }: { params: Promise<{ toke
 
         <h1 className={styles.name}>Hola 🐾 Soy {pet?.name}</h1>
         <p className={styles.subtitle}>Creo que estoy perdido/a. ¿Me ayudás a volver a casa?</p>
+
+        {basicInfoChips.length > 0 && (
+          <div className={styles.basicInfoRow}>
+            {basicInfoChips.map((chip) => (
+              <span key={chip} className={styles.basicInfoChip}>
+                {chip}
+              </span>
+            ))}
+          </div>
+        )}
 
         {medicalAlert && (
           <div className={styles.allergyAlert}>
