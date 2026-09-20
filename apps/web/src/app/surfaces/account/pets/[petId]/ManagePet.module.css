@@ -336,7 +336,10 @@
   display: block;
   width: 100%;
   max-width: 320px;
-  aspect-ratio: 1;
+  /* La imagen ahora es vertical (1080x1500 — pensada para celular/redes,
+     no un cuadrado) — el aspect-ratio tiene que matchear o se ve recortada
+     o con franjas raras. */
+  aspect-ratio: 1080 / 1500;
   object-fit: cover;
   border-radius: var(--radius-md);
   border: 1px solid var(--glass-border-strong);

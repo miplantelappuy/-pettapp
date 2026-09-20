@@ -62,6 +62,34 @@ export function LostPosterPreview({ petId, petName }: Props) {
     }
   }
 
+  // Abre una pestaña nueva con solo la imagen (nada del resto de la app) y
+  // dispara el diálogo de impresión del navegador apenas termina de cargar
+  // — desde ahí la persona puede imprimirla de verdad o guardarla como PDF,
+  // según lo que le ofrezca su navegador/impresora. document.write en una
+  // ventana en blanco abierta desde acá hereda este mismo origen, así que la
+  // ruta relativa de la imagen (que además necesita la cookie del panel para
+  // autenticarse) se resuelve y se manda igual que en cualquier <img> de
+  // esta página.
+  function handlePrint() {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return; // bloqueado por el navegador — no hay mucho más para hacer acá
+    printWindow.document.write(`<!DOCTYPE html>
+<html>
+  <head>
+    <title>${petName} - se busca</title>
+    <style>
+      @page { margin: 0; }
+      html, body { margin: 0; padding: 0; background: #fff; }
+      img { display: block; width: 100%; height: auto; }
+    </style>
+  </head>
+  <body>
+    <img src="${posterUrl}" onload="window.print()" alt="${petName} se busca" />
+  </body>
+</html>`);
+    printWindow.document.close();
+  }
+
   return (
     <div className={styles.posterPreview}>
       <img
@@ -79,6 +107,9 @@ export function LostPosterPreview({ petId, petName }: Props) {
         <a href={posterUrl} download={fileName} className="glassButton">
           💾 Descargar
         </a>
+        <button type="button" className="glassButton" onClick={handlePrint}>
+          🖨️ Imprimir
+        </button>
       </div>
       {shareError && (
         <p className={styles.hint} style={{ color: "var(--color-danger)", marginTop: "0.5rem" }}>
