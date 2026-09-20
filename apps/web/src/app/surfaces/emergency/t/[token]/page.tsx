@@ -6,7 +6,7 @@ import { resolveScanView } from "@/lib/qr";
 import { getPetHomeData } from "@/lib/pets-data";
 import { getEmergencyFields } from "@/lib/emergency-fields-data";
 import { formatPetAge } from "@/lib/age";
-import { crossSurfaceUrl, emergencyPath, ACCOUNT_REQUIRED_ON_ACTIVATION, GOOGLE_LOGIN_ENABLED } from "@/lib/env";
+import { crossSurfaceUrl, emergencyPath, ACCOUNT_LOGIN_READY, GOOGLE_LOGIN_ENABLED, EMAIL_LOGIN_ENABLED } from "@/lib/env";
 import { EmergencyActions } from "./EmergencyActions";
 import { ActivateTagForm } from "./ActivateTagForm";
 import { ClaimLoginGate } from "./ClaimLoginGate";
@@ -34,12 +34,14 @@ export default async function EmergencyPage({ params }: { params: Promise<{ toke
   const view = resolveScanView(tag, pet ?? null);
 
   if (view.view === "activation_pending") {
-    // Con ACCOUNT_REQUIRED_ON_ACTIVATION apagada (el default hoy — ver
-    // lib/env.ts sobre por qué), se mantiene el flujo de siempre: PIN, sin
-    // cuenta. Prendida, se reemplaza por login (email o Google) + un
-    // formulario con más campos, y la mascota queda protegida por esa cuenta
-    // en vez de un PIN — ver ClaimLoginGate/ClaimPetForm y /api/qr/claim.
-    if (!ACCOUNT_REQUIRED_ON_ACTIVATION) {
+    // Con ACCOUNT_LOGIN_READY apagada (el default hoy, y también la red de
+    // seguridad si alguien prende ACCOUNT_REQUIRED_ON_ACTIVATION sin tener
+    // Google ni email funcionando de verdad — ver lib/env.ts), se mantiene
+    // el flujo de siempre: PIN, sin cuenta. Prendida, se reemplaza por login
+    // (email o Google, lo que esté configurado) + un formulario con más
+    // campos, y la mascota queda protegida por esa cuenta en vez de un PIN —
+    // ver ClaimLoginGate/ClaimPetForm y /api/qr/claim.
+    if (!ACCOUNT_LOGIN_READY) {
       return (
         <main className={styles.page}>
           <p className={styles.emoji}>🐾</p>
@@ -57,7 +59,7 @@ export default async function EmergencyPage({ params }: { params: Promise<{ toke
         {session ? (
           <ClaimPetForm token={token} />
         ) : (
-          <ClaimLoginGate googleEnabled={GOOGLE_LOGIN_ENABLED} />
+          <ClaimLoginGate googleEnabled={GOOGLE_LOGIN_ENABLED} emailEnabled={EMAIL_LOGIN_ENABLED} />
         )}
       </main>
     );

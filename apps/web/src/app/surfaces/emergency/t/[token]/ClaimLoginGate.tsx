@@ -4,12 +4,18 @@ import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import styles from "./emergency.module.css";
 
-// Puerta de entrada cuando ACCOUNT_REQUIRED_ON_ACTIVATION está prendida:
-// antes de poder cargar a la mascota, hay que iniciar sesión. callbackURL
-// apunta a esta misma página (window.location.href, sin querystring propio)
-// para que, enlace mágico o Google, la persona vuelva exactamente acá — y
-// esta vez, con sesión, EmergencyPage le muestre ClaimPetForm en su lugar.
-export function ClaimLoginGate({ googleEnabled }: { googleEnabled: boolean }) {
+// Puerta de entrada cuando ACCOUNT_LOGIN_READY está prendida: antes de poder
+// cargar a la mascota, hay que iniciar sesión. callbackURL apunta a esta
+// misma página (window.location.href, sin querystring propio) para que,
+// enlace mágico o Google, la persona vuelva exactamente acá — y esta vez,
+// con sesión, EmergencyPage le muestre ClaimPetForm en su lugar.
+//
+// emailEnabled/googleEnabled: EmergencyPage solo llega a mostrar esta
+// pantalla cuando al menos UNO de los dos está prendido (ver
+// ACCOUNT_LOGIN_READY en lib/env.ts) — pero puede ser solo uno, así que acá
+// cada botón se muestra por separado según corresponda, nunca los dos por
+// las dudas.
+export function ClaimLoginGate({ googleEnabled, emailEnabled }: { googleEnabled: boolean; emailEnabled: boolean }) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
@@ -51,18 +57,20 @@ export function ClaimLoginGate({ googleEnabled }: { googleEnabled: boolean }) {
         </button>
       )}
 
-      <form className={styles.field} onSubmit={handleMagicLink} style={{ gap: "0.75rem" }}>
-        <input
-          type="email"
-          required
-          placeholder="tu@email.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <button type="submit" className="glassButton" disabled={status === "sending"}>
-          {status === "sending" ? "Enviando…" : "Entrar con enlace por email"}
-        </button>
-      </form>
+      {emailEnabled && (
+        <form className={styles.field} onSubmit={handleMagicLink} style={{ gap: "0.75rem" }}>
+          <input
+            type="email"
+            required
+            placeholder="tu@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <button type="submit" className="glassButton" disabled={status === "sending"}>
+            {status === "sending" ? "Enviando…" : "Entrar con enlace por email"}
+          </button>
+        </form>
+      )}
       {status === "error" && <p className={styles.errorMsg}>No se pudo enviar el enlace. Probá de nuevo.</p>}
     </div>
   );

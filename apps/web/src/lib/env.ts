@@ -44,6 +44,13 @@ export const GOOGLE_LOGIN_ENABLED = Boolean(
   process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
 );
 
+// Mismo criterio que GOOGLE_LOGIN_ENABLED, pero para el enlace mágico por
+// email (ver lib/email.ts): sin RESEND_API_KEY cargada, "enviarlo" solo
+// escribe en el log del servidor — nadie recibe nada de verdad. Se usa junto
+// con GOOGLE_LOGIN_ENABLED como red de seguridad de ACCOUNT_REQUIRED_ON_ACTIVATION
+// más abajo.
+export const EMAIL_LOGIN_ENABLED = Boolean(process.env.RESEND_API_KEY);
+
 // Interruptor a propósito, en falso por defecto: exige iniciar sesión (email
 // o Google) para vincular una chapita NUEVA, en vez del PIN sin cuenta de
 // hoy (ver ActivateTagForm/ClaimLoginGate en la superficie de emergencia).
@@ -55,6 +62,17 @@ export const GOOGLE_LOGIN_ENABLED = Boolean(
 // listo alguno de los dos, se prende con ACCOUNT_REQUIRED_ON_ACTIVATION=true
 // en Railway, sin volver a tocar código.
 export const ACCOUNT_REQUIRED_ON_ACTIVATION = process.env.ACCOUNT_REQUIRED_ON_ACTIVATION === "true";
+
+// Red de seguridad: lo que la página de activación mira de verdad NO es
+// ACCOUNT_REQUIRED_ON_ACTIVATION solo, sino esto. Si alguien prende el
+// interruptor de arriba mientras Google Y email siguen sin funcionar (por
+// ejemplo, por las dudas, o por error), esto se queda en `false` y la
+// chapita sigue usando el PIN de siempre en vez de dejar a alguien sin
+// ninguna forma de entrar. Se pone en `true` solo, sin tocar código, en
+// cuanto al menos uno de los dos métodos de login esté configurado de
+// verdad en Railway.
+export const ACCOUNT_LOGIN_READY =
+  ACCOUNT_REQUIRED_ON_ACTIVATION && (GOOGLE_LOGIN_ENABLED || EMAIL_LOGIN_ENABLED);
 
 // Para linkear DESDE una superficie HACIA otra (ej. desde el álbum de una
 // mascota, volver a la cuenta). Servidor-only (usa BASE_DOMAIN) — si un
