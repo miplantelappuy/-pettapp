@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { GoogleButton } from "@/components/GoogleButton";
 import styles from "./PetPinGate.module.css";
 
 // Se muestra en vez del panel de dueño cuando el navegador todavía no tiene
@@ -97,11 +98,7 @@ export function PetPinGate({
               ¿La vinculaste con Google o con tu email? Iniciá sesión en vez de un PIN:
             </p>
 
-            {googleEnabled && (
-              <button type="button" className="glassButton" onClick={handleGoogle} style={{ width: "100%" }}>
-                Continuar con Google
-              </button>
-            )}
+            {googleEnabled && <GoogleButton onClick={handleGoogle} />}
 
             {emailEnabled &&
               (emailStatus === "sent" ? (

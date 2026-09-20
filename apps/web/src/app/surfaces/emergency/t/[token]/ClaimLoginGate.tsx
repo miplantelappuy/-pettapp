@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { GoogleButton } from "@/components/GoogleButton";
 import styles from "./emergency.module.css";
 
 // Puerta de entrada cuando ACCOUNT_LOGIN_READY está prendida: antes de poder
@@ -51,11 +52,7 @@ export function ClaimLoginGate({ googleEnabled, emailEnabled }: { googleEnabled:
         recuperar el acceso si perdés el celular, y más adelante sumar a alguien más de la familia).
       </p>
 
-      {googleEnabled && (
-        <button type="button" className="accentButton" onClick={handleGoogle}>
-          Continuar con Google
-        </button>
-      )}
+      {googleEnabled && <GoogleButton onClick={handleGoogle} />}
 
       {emailEnabled && (
         <form className={styles.field} onSubmit={handleMagicLink} style={{ gap: "0.75rem" }}>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { GoogleButton } from "@/components/GoogleButton";
 import styles from "./account.module.css";
 
 interface Props {
@@ -44,9 +45,7 @@ export function LoginForm({ callbackPath = "/app", googleEnabled = false }: Prop
     <div>
       {googleEnabled && (
         <>
-          <button type="button" className={styles.googleButton} onClick={handleGoogle}>
-            Continuar con Google
-          </button>
+          <GoogleButton onClick={handleGoogle} />
           <p className={styles.divider}>o con tu email</p>
         </>
       )}
