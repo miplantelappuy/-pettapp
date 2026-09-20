@@ -3,11 +3,12 @@ import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
 import { auth } from "@/lib/auth";
-import { BASE_DOMAIN, BASE_PROTOCOL, HAS_CUSTOM_DOMAIN, GOOGLE_LOGIN_ENABLED } from "@/lib/env";
+import { BASE_DOMAIN, BASE_PROTOCOL, HAS_CUSTOM_DOMAIN, GOOGLE_LOGIN_ENABLED, ACCOUNT_LOGIN_READY } from "@/lib/env";
 import { getSurfacePrefix } from "@/lib/surface-prefix";
 import { PushOptIn } from "./PushOptIn";
 import { LoginForm } from "./LoginForm";
 import { ActivateForm } from "./ActivateForm";
+import { ClaimTagForm } from "./ClaimTagForm";
 import styles from "./account.module.css";
 
 export default async function AccountPage() {
@@ -70,7 +71,16 @@ export default async function AccountPage() {
           El código viene impreso en la chapita física (o escaneá su QR — te lleva directo acá con el código ya
           cargado, cuando esa pantalla esté lista).
         </p>
-        <ActivateForm tempPathMode={!HAS_CUSTOM_DOMAIN} baseDomain={BASE_DOMAIN} baseProtocol={BASE_PROTOCOL} />
+        {ACCOUNT_LOGIN_READY ? (
+          // Con login obligatorio, activar una chapita nueva pasa por el
+          // mismo endpoint con cuenta que /tag/<token> (ver ClaimTagForm) —
+          // ya no tiene sentido pedir PIN acá si ya estás logueado, y así la
+          // mascota queda en TU hogar (antes, ActivateForm creaba un hogar
+          // invisible aparte que ni aparecía en esta lista).
+          <ClaimTagForm />
+        ) : (
+          <ActivateForm tempPathMode={!HAS_CUSTOM_DOMAIN} baseDomain={BASE_DOMAIN} baseProtocol={BASE_PROTOCOL} />
+        )}
       </section>
 
       <Link href={`${prefix}/qr`} className={styles.textLink}>
