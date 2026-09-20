@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { organization, magicLink } from "better-auth/plugins";
 import { db } from "@pettapp/db";
-import { BASE_DOMAIN, BASE_PROTOCOL, COOKIE_DOMAIN, urlFor } from "./env";
+import { COOKIE_DOMAIN, urlFor } from "./env";
 import { sendMagicLinkEmail } from "./email";
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -16,14 +16,16 @@ import { sendMagicLinkEmail } from "./email";
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
 
-  // Multi-tenant por subdominio: en vez de una baseURL fija, se valida el
-  // host de cada request contra BASE_DOMAIN (nunca hardcodeado).
-  baseURL: {
-    allowedHosts: [BASE_DOMAIN, `*.${BASE_DOMAIN}`],
-    protocol: BASE_PROTOCOL as "http" | "https",
-    // Si algún proxy manda un host inesperado, mejor fallar explícito que
-    // adivinar — por eso NO seteamos `fallback` acá.
-  },
+  // En esta versión de better-auth, baseURL es un string simple (no un
+  // objeto con allowedHosts/protocol, como se había armado en un borrador
+  // anterior sin poder compilarlo de verdad). Alcanza con esto: hoy
+  // (HAS_CUSTOM_DOMAIN en falso, ver lib/env.ts) TODO vive en un solo host
+  // real — BASE_DOMAIN sin subdominio, que es justo lo que arma
+  // urlFor(null). El día que haya dominio propio con subdominio por mascota,
+  // el mecanismo correcto para aceptar varios hosts no es baseURL sino
+  // trustedOrigins como función (abajo es un array fijo; better-auth también
+  // acepta `(request) => string[]`) — no hace falta tocar esto todavía.
+  baseURL: urlFor(null),
 
   trustedOrigins: [urlFor(null), urlFor("app"), urlFor("tag")],
 
