@@ -5,8 +5,11 @@
     "apps/*",
     "packages/*"
   ],
-  "overrides": {
+  "dependencies": {
     "drizzle-orm": "^0.36.0"
+  },
+  "overrides": {
+    "drizzle-orm": "$drizzle-orm"
   },
   "scripts": {
     "dev:web": "npm run dev --workspace=apps/web",
