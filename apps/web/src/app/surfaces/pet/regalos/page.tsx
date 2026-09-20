@@ -4,12 +4,13 @@ import { db, schema } from "@pettapp/db";
 import { getPetHomeData } from "@/lib/pets-data";
 import { getStorage } from "@/lib/storage";
 import { getSurfacePrefix } from "@/lib/surface-prefix";
-import { hasPetAccess } from "@/lib/pin";
+import { hasOwnerAccess } from "@/lib/pin";
 import { PetPinGate } from "../PetPinGate";
 import { RegalosClient } from "./RegalosClient";
 
 export default async function RegalosPage() {
-  const slug = (await headers()).get("x-pet-slug");
+  const hdrs = await headers();
+  const slug = hdrs.get("x-pet-slug");
   const pet = slug ? await getPetHomeData(slug) : null;
   const prefix = await getSurfacePrefix();
 
@@ -21,7 +22,7 @@ export default async function RegalosPage() {
     );
   }
 
-  const authorized = await hasPetAccess(pet.id);
+  const authorized = await hasOwnerAccess(pet.id, hdrs);
   if (!authorized) {
     return <PetPinGate petId={pet.id} petName={pet.name} />;
   }

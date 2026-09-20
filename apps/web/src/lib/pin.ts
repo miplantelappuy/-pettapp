@@ -9,6 +9,9 @@
 
 import { randomBytes, scryptSync, timingSafeEqual, createHmac } from "node:crypto";
 import { cookies } from "next/headers";
+import { eq, and } from "drizzle-orm";
+import { db, schema } from "@pettapp/db";
+import { auth } from "./auth";
 
 const KEYLEN = 32;
 
@@ -66,6 +69,30 @@ export async function hasPetAccess(petId: string): Promise<boolean> {
   const store = await cookies();
   const token = store.get(petAccessCookieName(petId))?.value;
   return verifyPetAccessToken(petId, token);
+}
+
+// Igual criterio que lib/authz.ts#assertPetOwnership (rutas de API), pero
+// para las páginas de la superficie /p/<slug> (Home, Gestionar, Crecimiento,
+// Recuerdos, Regalos): ¿esta persona puede ver el panel de dueño? PIN
+// (mascotas activadas sin cuenta, el flujo de siempre) o sesión + membresía
+// en la organización de la mascota (mascotas activadas CON cuenta desde que
+// existe /api/qr/claim — esas nunca tuvieron PIN, así que sin este segundo
+// camino quedaban trabadas pidiendo un PIN que nadie eligió nunca). Cada
+// página sigue decidiendo qué mostrar si esto da false (típicamente
+// <PetPinGate>).
+export async function hasOwnerAccess(petId: string, requestHeaders: Headers): Promise<boolean> {
+  if (await hasPetAccess(petId)) return true;
+
+  const session = await auth.api.getSession({ headers: requestHeaders });
+  if (!session) return false;
+
+  const pet = await db.query.pets.findFirst({ where: eq(schema.pets.id, petId) });
+  if (!pet) return false;
+
+  const membership = await db.query.member.findFirst({
+    where: and(eq(schema.member.organizationId, pet.organizationId), eq(schema.member.userId, session.user.id)),
+  });
+  return Boolean(membership);
 }
 
 // Enlace para "sumar a otro dueño" a la mascota (ver /api/pets/[petId]/share-link

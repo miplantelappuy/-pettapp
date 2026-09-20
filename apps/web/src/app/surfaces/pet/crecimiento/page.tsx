@@ -2,12 +2,13 @@ import { headers } from "next/headers";
 import { getPetHomeData } from "@/lib/pets-data";
 import { getMilestones } from "@/lib/milestones-data";
 import { getSurfacePrefix } from "@/lib/surface-prefix";
-import { hasPetAccess } from "@/lib/pin";
+import { hasOwnerAccess } from "@/lib/pin";
 import { PetPinGate } from "../PetPinGate";
 import { GrowthPath } from "./GrowthPath";
 
 export default async function CrecimientoPage() {
-  const slug = (await headers()).get("x-pet-slug");
+  const hdrs = await headers();
+  const slug = hdrs.get("x-pet-slug");
   const pet = slug ? await getPetHomeData(slug) : null;
   const prefix = await getSurfacePrefix(); // "" con dominio propio, "/p/<slug>" hoy sin uno
 
@@ -19,7 +20,7 @@ export default async function CrecimientoPage() {
     );
   }
 
-  const authorized = await hasPetAccess(pet.id);
+  const authorized = await hasOwnerAccess(pet.id, hdrs);
   if (!authorized) {
     return <PetPinGate petId={pet.id} petName={pet.name} />;
   }

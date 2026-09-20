@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
-import { hasPetAccess } from "@/lib/pin";
+import { assertPetOwnership } from "@/lib/authz";
 
 interface Body {
   action: "save" | "discard";
@@ -24,9 +24,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "No encontrado" }, { status: 404 });
   }
 
-  const authorized = await hasPetAccess(gift.petId);
-  if (!authorized) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  // PIN (mascotas sin cuenta) o sesión + membresía (mascotas activadas con
+  // cuenta desde /api/qr/claim, que nunca tuvieron PIN) — mismo chequeo que
+  // ya usan las demás rutas de mascota.
+  const ownership = await assertPetOwnership(request, gift.petId);
+  if (!ownership.ok) {
+    return NextResponse.json({ error: ownership.error }, { status: ownership.status });
   }
 
   if (body.action === "save") {

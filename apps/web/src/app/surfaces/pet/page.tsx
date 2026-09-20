@@ -5,12 +5,13 @@ import { getPetHomeData } from "@/lib/pets-data";
 import { getVaccinations } from "@/lib/vaccinations-data";
 import { getMilestones } from "@/lib/milestones-data";
 import { getSurfacePrefix } from "@/lib/surface-prefix";
-import { hasPetAccess } from "@/lib/pin";
+import { hasOwnerAccess } from "@/lib/pin";
 import { OwnerHome } from "./OwnerHome";
 import { PetPinGate } from "./PetPinGate";
 
 export default async function PetHomePage() {
-  const slug = (await headers()).get("x-pet-slug");
+  const hdrs = await headers();
+  const slug = hdrs.get("x-pet-slug");
   const pet = slug ? await getPetHomeData(slug) : null;
   const prefix = await getSurfacePrefix(); // "" con dominio propio, "/p/<slug>" hoy sin uno
 
@@ -25,7 +26,10 @@ export default async function PetHomePage() {
     );
   }
 
-  const authorized = await hasPetAccess(pet.id);
+  // hasOwnerAccess (lib/pin.ts) acepta PIN (mascotas sin cuenta) o sesión +
+  // membresía (mascotas activadas con cuenta desde /api/qr/claim, que nunca
+  // tuvieron PIN).
+  const authorized = await hasOwnerAccess(pet.id, hdrs);
   if (!authorized) {
     return <PetPinGate petId={pet.id} petName={pet.name} />;
   }

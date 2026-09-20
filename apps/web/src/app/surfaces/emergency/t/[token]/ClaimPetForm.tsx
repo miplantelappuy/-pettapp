@@ -21,6 +21,7 @@ export function ClaimPetForm({ token }: { token: string }) {
   const [birthDate, setBirthDate] = useState("");
   const [medicalAlert, setMedicalAlert] = useState("");
   const [showBasicInfoPublic, setShowBasicInfoPublic] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -56,7 +57,35 @@ export function ClaimPetForm({ token }: { token: string }) {
       return;
     }
 
-    const { petSlug } = await res.json();
+    const { petSlug, petId } = await res.json();
+
+    // La foto es opcional y NO debería trabar la activación si algo sale
+    // mal acá — la mascota ya quedó vinculada con lo mínimo, y la foto
+    // siempre se puede cargar después desde Gestionar. Mismo mecanismo de
+    // subida directa a R2 que usa ManagePet (POST upload-url, PUT el
+    // archivo, y PATCH para elegirla como foto de emergencia — la que ve
+    // quien escanea la chapita).
+    if (photoFile) {
+      try {
+        const uploadRes = await fetch("/api/media/upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ petId, contentType: photoFile.type, kind: "photo" }),
+        });
+        if (uploadRes.ok) {
+          const { uploadUrl, mediaId } = await uploadRes.json();
+          await fetch(uploadUrl, { method: "PUT", body: photoFile, headers: { "Content-Type": photoFile.type } });
+          await fetch(`/api/pets/${petId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ emergencyPhotoMediaId: mediaId }),
+          });
+        }
+      } catch {
+        // Silencioso a propósito — ver comentario arriba.
+      }
+    }
+
     window.location.href = `/p/${petSlug}`;
   }
 
@@ -147,6 +176,11 @@ export function ClaimPetForm({ token }: { token: string }) {
               onChange={(e) => setMedicalAlert(e.target.value)}
               placeholder="Ej: alérgico a la penicilina"
             />
+          </label>
+
+          <label className={styles.field}>
+            <span>Foto de {name || "tu mascota"} (la que va a ver quien escanee la chapita)</span>
+            <input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files?.[0] ?? null)} />
           </label>
 
           <label className={styles.field} style={{ flexDirection: "row", alignItems: "center", gap: "0.6rem" }}>

@@ -23,6 +23,7 @@ export function ClaimTagForm() {
   const [birthDate, setBirthDate] = useState("");
   const [medicalAlert, setMedicalAlert] = useState("");
   const [showBasicInfoPublic, setShowBasicInfoPublic] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -58,7 +59,32 @@ export function ClaimTagForm() {
       return;
     }
 
-    const { petSlug } = await res.json();
+    const { petSlug, petId } = await res.json();
+
+    // Opcional, no debería trabar la activación si falla — mismo mecanismo
+    // de subida directa que ManagePet (ver ClaimPetForm, superficie
+    // emergencia, con el mismo comentario completo).
+    if (photoFile) {
+      try {
+        const uploadRes = await fetch("/api/media/upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ petId, contentType: photoFile.type, kind: "photo" }),
+        });
+        if (uploadRes.ok) {
+          const { uploadUrl, mediaId } = await uploadRes.json();
+          await fetch(uploadUrl, { method: "PUT", body: photoFile, headers: { "Content-Type": photoFile.type } });
+          await fetch(`/api/pets/${petId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ emergencyPhotoMediaId: mediaId }),
+          });
+        }
+      } catch {
+        // Silencioso a propósito — ver comentario en ClaimPetForm.
+      }
+    }
+
     window.location.href = `/p/${petSlug}`;
   }
 
@@ -120,6 +146,10 @@ export function ClaimTagForm() {
             value={medicalAlert}
             onChange={(e) => setMedicalAlert(e.target.value)}
           />
+          <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: "0.85rem", flex: 1, minWidth: "200px" }}>
+            Foto de {name || "tu mascota"} (la que va a ver quien escanee la chapita)
+            <input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files?.[0] ?? null)} />
+          </label>
           <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.85rem" }}>
             <input
               type="checkbox"

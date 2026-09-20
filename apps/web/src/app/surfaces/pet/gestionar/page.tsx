@@ -6,15 +6,17 @@ import { getMilestones } from "@/lib/milestones-data";
 import { getEmergencyFields } from "@/lib/emergency-fields-data";
 import { getSurfacePrefix } from "@/lib/surface-prefix";
 import { emergencyPath, scanUrlFor } from "@/lib/env";
-import { hasPetAccess } from "@/lib/pin";
+import { hasOwnerAccess } from "@/lib/pin";
 import { PetPinGate } from "../PetPinGate";
 import { ManagePet } from "../../account/pets/[petId]/ManagePet";
 
-// Vive en la superficie de la mascota (no ya en /app/pets/<id>) porque el
-// acceso ahora es por PIN, no por sesión — reutiliza el mismo componente
-// ManagePet de siempre, que no sabe ni le importa de dónde vino el permiso.
+// Vive en la superficie de la mascota (no ya en /app/pets/<id>) porque
+// originalmente el acceso era solo por PIN. hasOwnerAccess (lib/pin.ts)
+// ahora acepta también sesión + membresía, para las mascotas vinculadas CON
+// cuenta (ver /api/qr/claim) que nunca tuvieron PIN para empezar.
 export default async function GestionarPage() {
-  const slug = (await headers()).get("x-pet-slug");
+  const hdrs = await headers();
+  const slug = hdrs.get("x-pet-slug");
   const pet = slug ? await getPetHomeData(slug) : null;
   const prefix = await getSurfacePrefix();
 
@@ -26,7 +28,7 @@ export default async function GestionarPage() {
     );
   }
 
-  const authorized = await hasPetAccess(pet.id);
+  const authorized = await hasOwnerAccess(pet.id, hdrs);
   if (!authorized) {
     return <PetPinGate petId={pet.id} petName={pet.name} />;
   }
