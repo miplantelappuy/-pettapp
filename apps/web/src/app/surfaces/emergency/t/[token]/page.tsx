@@ -18,8 +18,20 @@ import styles from "./emergency.module.css";
 // la chapita de acero). Tres estados posibles según el estado de la chapita:
 // sin vincular todavía (activación acá mismo), vinculada (perfil + acciones
 // rápidas + compartir fotos/entrar al panel), o dada de baja.
-export default async function EmergencyPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function EmergencyPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ token: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const { token } = await params;
+  const sp = await searchParams;
+  // Lo pone ClaimLoginGate en el callbackURL (ver withLoginParam ahí) justo
+  // antes de mandar a Google/al enlace mágico — así, al volver ya con
+  // sesión, ClaimPetForm puede mostrar "conectado con éxito" en vez de
+  // aparecer de golpe sin ningún aviso de que el login funcionó.
+  const justLoggedIn = sp.login === "ok";
 
   const tag = await db.query.qrTags.findFirst({ where: eq(schema.qrTags.publicToken, token) });
   if (!tag) {
@@ -57,7 +69,7 @@ export default async function EmergencyPage({ params }: { params: Promise<{ toke
         <p className={styles.emoji}>🐾</p>
         <h1 className={styles.pendingTitle}>¡Hola! Todavía no tengo dueño</h1>
         {session ? (
-          <ClaimPetForm token={token} />
+          <ClaimPetForm token={token} justLoggedIn={justLoggedIn} />
         ) : (
           <ClaimLoginGate googleEnabled={GOOGLE_LOGIN_ENABLED} emailEnabled={EMAIL_LOGIN_ENABLED} />
         )}

@@ -786,12 +786,25 @@ export function ManagePet({
             {shareStatus === "generating" ? "Generando…" : "Generar enlace para invitar"}
           </button>
         ) : (
-          <div className={styles.shareLinkRow}>
-            <input type="text" readOnly value={shareUrl} onFocus={(e) => e.target.select()} />
-            <button type="button" className="accentButton" onClick={copyShareLink}>
-              {shareStatus === "copied" ? "¡Copiado!" : "Copiar"}
-            </button>
-          </div>
+          <>
+            <div className={styles.shareLinkRow}>
+              <input type="text" readOnly value={shareUrl} onFocus={(e) => e.target.select()} />
+              <button type="button" className="accentButton" onClick={copyShareLink}>
+                {shareStatus === "copied" ? "¡Copiado!" : "Copiar"}
+              </button>
+            </div>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(
+                `Te invito a sumarte como dueño/a de ${pet.name} en la app — entrá con tu cuenta de Google o tu email: ${shareUrl}`,
+              )}`}
+              target="_blank"
+              rel="noreferrer"
+              className="glassButton"
+              style={{ display: "inline-block", marginTop: "0.6rem" }}
+            >
+              📲 Enviar por WhatsApp
+            </a>
+          </>
         )}
         {shareStatus === "error" && (
           <p className={styles.hint} style={{ color: "var(--color-danger)" }}>

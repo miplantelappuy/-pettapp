@@ -24,13 +24,13 @@ export function ClaimLoginGate({ googleEnabled, emailEnabled }: { googleEnabled:
     setStatus("sending");
     const { error } = await authClient.signIn.magicLink({
       email,
-      callbackURL: window.location.href,
+      callbackURL: withLoginParam(window.location.href),
     });
     setStatus(error ? "error" : "sent");
   }
 
   async function handleGoogle() {
-    await authClient.signIn.social({ provider: "google", callbackURL: window.location.href });
+    await authClient.signIn.social({ provider: "google", callbackURL: withLoginParam(window.location.href) });
   }
 
   if (status === "sent") {
@@ -74,4 +74,13 @@ export function ClaimLoginGate({ googleEnabled, emailEnabled }: { googleEnabled:
       {status === "error" && <p className={styles.errorMsg}>No se pudo enviar el enlace. Probá de nuevo.</p>}
     </div>
   );
+}
+
+// Marca en la URL de vuelta que el login recién se completó, para que
+// EmergencyPage se lo pase a ClaimPetForm y este muestre "conectado con
+// éxito" en vez de aparecer con el formulario de golpe sin ningún aviso.
+function withLoginParam(href: string): string {
+  const url = new URL(href);
+  url.searchParams.set("login", "ok");
+  return url.toString();
 }

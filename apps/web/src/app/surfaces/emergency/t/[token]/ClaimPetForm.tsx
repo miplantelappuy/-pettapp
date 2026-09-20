@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./emergency.module.css";
 
 // Formulario post-login para vincular la chapita: solo se ve una vez que ya
@@ -9,7 +9,16 @@ import styles from "./emergency.module.css";
 // de lo opcional (todo lo que ayuda a quien encuentre a la mascota, pero que
 // no debería frenar a nadie que tenga apuro) — con un mensaje que explica
 // POR QUÉ conviene cargar de más, no solo que "se puede".
-export function ClaimPetForm({ token }: { token: string }) {
+export function ClaimPetForm({ token, justLoggedIn = false }: { token: string; justLoggedIn?: boolean }) {
+  // Saca el ?login=ok de la barra de direcciones apenas se muestra el
+  // aviso — así un refresh de esta misma pantalla no lo vuelve a mostrar.
+  useEffect(() => {
+    if (!justLoggedIn) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("login");
+    window.history.replaceState({}, "", url.toString());
+  }, [justLoggedIn]);
+
   const [name, setName] = useState("");
   const [species, setSpecies] = useState<"dog" | "cat" | "other">("dog");
   const [ownerName, setOwnerName] = useState("");
@@ -91,6 +100,11 @@ export function ClaimPetForm({ token }: { token: string }) {
 
   return (
     <form className={`${styles.activateForm} glass`} onSubmit={handleSubmit}>
+      {justLoggedIn && (
+        <p className={styles.activateLead} style={{ color: "#2e7d46", fontWeight: 600, margin: 0 }}>
+          ✅ Conectado correctamente.
+        </p>
+      )}
       <p className={styles.activateLead}>Ya iniciaste sesión — vinculemos esta chapita a tu mascota:</p>
 
       <label className={styles.field}>

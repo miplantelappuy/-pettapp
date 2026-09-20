@@ -122,3 +122,30 @@ export function verifyOrgInviteToken(token: string | undefined | null): string |
   if (a.length !== b.length) return null;
   return timingSafeEqual(a, b) ? organizationId : null;
 }
+
+// Enlace de "plantilla para grabar": lo que el operador (vos) le manda por
+// WhatsApp a quien graba las chapitas físicas, para que abra la lista de QR
+// pendientes sin necesitar cuenta ni ser vos. Sin estado en el servidor
+// (mismo esquema HMAC de arriba) — no identifica ninguna chapita en
+// particular, solo prueba que el link salió de acá y que no venció. Dura
+// poco (48hs) porque a diferencia de un invite de familia, esto es de un
+// solo uso puntual (un pedido a la imprenta), no algo para guardar.
+const QR_SHARE_TTL_MS = 1000 * 60 * 60 * 48; // 48 horas
+
+export function signQrShareToken(): string {
+  const expires = Date.now() + QR_SHARE_TTL_MS;
+  const sig = createHmac("sha256", SECRET).update(`qrshare.${expires}`).digest("hex");
+  return `${expires}.${sig}`;
+}
+
+export function verifyQrShareToken(token: string | undefined | null): boolean {
+  if (!token) return false;
+  const [expiresStr, sig] = token.split(".");
+  const expires = Number(expiresStr);
+  if (!expires || !sig || Number.isNaN(expires) || Date.now() > expires) return false;
+  const expected = createHmac("sha256", SECRET).update(`qrshare.${expires}`).digest("hex");
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
