@@ -322,6 +322,25 @@ export function ManagePet({
     flash(next ? "Modo perdido activado" : `¡Qué alegría! Modo perdido desactivado`);
   }
 
+  // Antes la zona solo se podía escribir en el momento de activar el modo
+  // perdido — quien lo activó sin ponerla (o lo tenía activo desde antes de
+  // que existiera este campo) no tenía forma de cargarla después, y es justo
+  // el dato que más ayuda a la gente que ve el cartel de "se busca". Ahora se
+  // puede agregar o corregir en cualquier momento mientras sigue activo.
+  async function saveLostZone(zone: string) {
+    const trimmed = zone.trim();
+    setPet((p) => ({ ...p, lostZone: trimmed || null }) as PetHomeData);
+    if (demoMode) return flash("Guardado (vista previa, no se guarda de verdad)");
+    const res = await fetch(`/api/pets/${petId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lostZone: trimmed || null }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return flash(body?.error ?? "No se pudo guardar la zona");
+    flash("Zona guardada");
+  }
+
   // Email opcional para avisos de escaneo, además del push (ver lib/email.ts
   // — necesita RESEND_API_KEY/EMAIL_FROM configuradas en Railway para
   // mandar de verdad, si no solo queda en el registro del servidor). El
@@ -479,11 +498,18 @@ export function ManagePet({
         </p>
 
         {pet.lostMode ? (
-          pet.lostZone && (
-            <p className={styles.hint} style={{ marginTop: "-0.5rem" }}>
-              📍 Zona informada: <strong>{pet.lostZone}</strong>
-            </p>
-          )
+          <>
+            {pet.lostZone && (
+              <p className={styles.hint} style={{ marginTop: "-0.5rem" }}>
+                📍 Zona informada: <strong>{pet.lostZone}</strong>
+              </p>
+            )}
+            <LostZoneForm
+              key={pet.lostZone ?? ""}
+              zone={pet.lostZone ?? ""}
+              onSave={saveLostZone}
+            />
+          </>
         ) : (
           <input
             type="text"
@@ -502,7 +528,13 @@ export function ManagePet({
         >
           {pet.lostMode ? `✅ Marcar que ${pet.name} ya apareció` : `🚨 Marcar a ${pet.name} como perdido/a`}
         </button>
-        {pet.lostMode && !demoMode && <LostPosterPreview petId={petId} petName={pet.name} />}
+        {pet.lostMode && !demoMode && (
+          // key con la zona: fuerza que el cartel se vuelva a pedir (con su
+          // propio cache-bust nuevo) apenas se guarda o corrige la zona, en
+          // vez de seguir mostrando la vista previa vieja hasta refrescar la
+          // página entera.
+          <LostPosterPreview key={pet.lostZone ?? "no-zone"} petId={petId} petName={pet.name} />
+        )}
       </section>
 
       {/* ── Cumpleaños ── */}
@@ -850,6 +882,29 @@ function BasicInfoForm({
         Mostrar estos datos (y la edad) en el perfil de emergencia
       </label>
       <button type="submit">Guardar</button>
+    </form>
+  );
+}
+
+function LostZoneForm({ zone, onSave }: { zone: string; onSave: (zone: string) => void }) {
+  const [localZone, setLocalZone] = useState(zone);
+
+  return (
+    <form
+      className={styles.form}
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSave(localZone);
+      }}
+    >
+      <input
+        type="text"
+        placeholder="Zona donde se perdió (ej: Barrio Centro)"
+        value={localZone}
+        onChange={(e) => setLocalZone(e.target.value)}
+        maxLength={120}
+      />
+      <button type="submit">{zone ? "Corregir zona" : "Agregar zona"}</button>
     </form>
   );
 }
