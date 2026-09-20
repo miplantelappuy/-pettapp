@@ -3,7 +3,7 @@ import { eq, and } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
 import { auth } from "@/lib/auth";
 import { verifyOrgInviteToken } from "@/lib/pin";
-import { GOOGLE_LOGIN_ENABLED } from "@/lib/env";
+import { GOOGLE_LOGIN_ENABLED, crossSurfaceUrl } from "@/lib/env";
 import { LoginForm } from "../../LoginForm";
 import { JoinConfirm } from "./JoinConfirm";
 import styles from "../../account.module.css";
@@ -39,7 +39,13 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
         <p className={styles.lead}>
           Iniciá sesión (con el email o la cuenta de Google que quieras usar) para aceptar la invitación.
         </p>
-        <LoginForm callbackPath={`/join/${token}`} googleEnabled={GOOGLE_LOGIN_ENABLED} />
+        {/* OJO: acá NO alcanza con "/join/<token>" a secas — hoy (sin dominio
+            propio) esta pantalla se sirve por path bajo /app, así que la
+            vuelta del login tiene que llevar ese mismo prefijo o cae en una
+            URL que no existe (ver crossSurfaceUrl en lib/env.ts). Ese era
+            justo el bug: se podía iniciar sesión, pero nunca volvía a esta
+            pantalla para confirmar la invitación. */}
+        <LoginForm callbackPath={crossSurfaceUrl("app", `/join/${token}`)} googleEnabled={GOOGLE_LOGIN_ENABLED} />
       </main>
     );
   }
