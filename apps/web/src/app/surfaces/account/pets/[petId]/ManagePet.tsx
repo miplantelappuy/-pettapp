@@ -84,6 +84,8 @@ export function ManagePet({
   const [savedFlash, setSavedFlash] = useState<string | null>(null);
   const [processingVideo, setProcessingVideo] = useState(false);
   const [savingMilestone, setSavingMilestone] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareStatus, setShareStatus] = useState<"idle" | "generating" | "copied" | "error">("idle");
 
   function flash(msg: string) {
     setSavedFlash(msg);
@@ -339,6 +341,43 @@ export function ManagePet({
     const body = await res.json().catch(() => null);
     if (!res.ok) return flash(body?.error ?? "No se pudo guardar la zona");
     flash("Zona guardada");
+  }
+
+  // Enlace para sumar a otro dueño (ver /api/pets/[petId]/share-link) — sirve
+  // tanto si a esta mascota se llegó por PIN como por cuenta: quien abra el
+  // enlace e inicie sesión (o ya la tenga) queda sumado como dueño de
+  // verdad, con los mismos permisos. Cada click genera uno nuevo (vencen a
+  // los 7 días) en vez de guardar uno fijo — así uno viejo que se compartió
+  // de más se puede dejar vencer sin tener que "revocarlo" a mano.
+  async function generateShareLink() {
+    setShareStatus("generating");
+    setShareUrl(null);
+    if (demoMode) {
+      setShareUrl("https://ejemplo.com/join/vista-previa");
+      setShareStatus("idle");
+      return;
+    }
+    try {
+      const res = await fetch(`/api/pets/${petId}/share-link`, { method: "POST" });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(body?.error ?? "No se pudo generar el enlace");
+      setShareUrl(body.url);
+      setShareStatus("idle");
+    } catch {
+      setShareStatus("error");
+    }
+  }
+
+  async function copyShareLink() {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareStatus("copied");
+      setTimeout(() => setShareStatus("idle"), 2000);
+    } catch {
+      // Algunos navegadores piden permiso o no tienen clipboard — el enlace
+      // ya está visible en el input de al lado, seleccionarlo a mano alcanza.
+    }
   }
 
   // Email opcional para avisos de escaneo, además del push (ver lib/email.ts
@@ -731,6 +770,32 @@ export function ManagePet({
               /panel
             </a>{" "}
             y usá &quot;Crear chapita de prueba&quot; para generar una.
+          </p>
+        )}
+      </section>
+
+      {/* ── Compartir con otro dueño ── */}
+      <section className={`${styles.section} glass`}>
+        <h2 className={styles.sectionTitle}>👪 Compartir esta mascota</h2>
+        <p className={styles.hint}>
+          Generá un enlace para sumar a alguien más de la familia (pareja, hijo, lo que sea) como dueño/a de{" "}
+          {pet.name} — va a poder gestionarla igual que vos, desde su propia cuenta. El enlace vence a los 7 días.
+        </p>
+        {!shareUrl ? (
+          <button type="button" className="glassButton" onClick={generateShareLink} disabled={shareStatus === "generating"}>
+            {shareStatus === "generating" ? "Generando…" : "Generar enlace para invitar"}
+          </button>
+        ) : (
+          <div className={styles.shareLinkRow}>
+            <input type="text" readOnly value={shareUrl} onFocus={(e) => e.target.select()} />
+            <button type="button" className="accentButton" onClick={copyShareLink}>
+              {shareStatus === "copied" ? "¡Copiado!" : "Copiar"}
+            </button>
+          </div>
+        )}
+        {shareStatus === "error" && (
+          <p className={styles.hint} style={{ color: "var(--color-danger)" }}>
+            No se pudo generar el enlace — probá de nuevo.
           </p>
         )}
       </section>

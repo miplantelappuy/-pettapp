@@ -34,6 +34,28 @@ export const COOKIE_DOMAIN = BASE_DOMAIN.split(":")[0];
 // solas, sin tocar el resto del código.
 export const HAS_CUSTOM_DOMAIN = process.env.HAS_CUSTOM_DOMAIN === "true";
 
+// El botón "Continuar con Google" solo tiene sentido mostrarlo si de verdad
+// hay credenciales de Google cargadas (ver lib/auth.ts) — sin esto, Better
+// Auth ya acepta el proveedor "google" en su config, pero tocar el botón
+// termina en un error de Google ("invalid_client"). Se prende solo, sin
+// tocar código, el día que se carguen GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET
+// en Railway.
+export const GOOGLE_LOGIN_ENABLED = Boolean(
+  process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
+);
+
+// Interruptor a propósito, en falso por defecto: exige iniciar sesión (email
+// o Google) para vincular una chapita NUEVA, en vez del PIN sin cuenta de
+// hoy (ver ActivateTagForm/ClaimLoginGate en la superficie de emergencia).
+// Se deja apagado hasta que Facundo confirme que al menos un método de login
+// funciona de verdad en producción — hoy RESEND_API_KEY no está cargada
+// (el enlace mágico por email no se manda, solo queda en el log del
+// servidor) y tampoco hay credenciales de Google, así que prenderlo ahora
+// dejaría a cualquiera sin forma de activar una chapita nueva. Cuando esté
+// listo alguno de los dos, se prende con ACCOUNT_REQUIRED_ON_ACTIVATION=true
+// en Railway, sin volver a tocar código.
+export const ACCOUNT_REQUIRED_ON_ACTIVATION = process.env.ACCOUNT_REQUIRED_ON_ACTIVATION === "true";
+
 // Para linkear DESDE una superficie HACIA otra (ej. desde el álbum de una
 // mascota, volver a la cuenta). Servidor-only (usa BASE_DOMAIN) — si un
 // componente cliente necesita esto, se lo tiene que pasar como prop ya

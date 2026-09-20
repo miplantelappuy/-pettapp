@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
 import { auth } from "@/lib/auth";
-import { BASE_DOMAIN, BASE_PROTOCOL, HAS_CUSTOM_DOMAIN } from "@/lib/env";
+import { BASE_DOMAIN, BASE_PROTOCOL, HAS_CUSTOM_DOMAIN, GOOGLE_LOGIN_ENABLED } from "@/lib/env";
 import { getSurfacePrefix } from "@/lib/surface-prefix";
 import { PushOptIn } from "./PushOptIn";
 import { LoginForm } from "./LoginForm";
@@ -20,7 +20,7 @@ export default async function AccountPage() {
       <main className={styles.page}>
         <h1 className={styles.title}>Tu familia</h1>
         <p className={styles.lead}>Ingresá con tu email para ver y gestionar tus mascotas.</p>
-        <LoginForm />
+        <LoginForm googleEnabled={GOOGLE_LOGIN_ENABLED} />
       </main>
     );
   }

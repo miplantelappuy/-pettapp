@@ -77,6 +77,32 @@
   cursor: default;
 }
 
+/* Botón de Google — separado de .form button porque vive AFUERA del <form>
+   de email (ver LoginForm), pero mismo tono visual. Blanco con borde: es lo
+   esperado para un botón de "Continuar con Google" (guía de marca de
+   Google), no el acento de la app. */
+.googleButton {
+  display: block;
+  width: 100%;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(34, 29, 26, 0.25);
+  background: #fff;
+  color: var(--color-ink);
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+}
+
+.divider {
+  text-align: center;
+  font-size: 0.78rem;
+  opacity: 0.55;
+  margin: 0 0 0.6rem;
+}
+
 /* Lista de mascotas */
 
 .petList {

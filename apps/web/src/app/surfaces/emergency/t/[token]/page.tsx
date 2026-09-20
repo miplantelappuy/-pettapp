@@ -1,12 +1,16 @@
+import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
+import { auth } from "@/lib/auth";
 import { resolveScanView } from "@/lib/qr";
 import { getPetHomeData } from "@/lib/pets-data";
 import { getEmergencyFields } from "@/lib/emergency-fields-data";
 import { formatPetAge } from "@/lib/age";
-import { crossSurfaceUrl, emergencyPath } from "@/lib/env";
+import { crossSurfaceUrl, emergencyPath, ACCOUNT_REQUIRED_ON_ACTIVATION, GOOGLE_LOGIN_ENABLED } from "@/lib/env";
 import { EmergencyActions } from "./EmergencyActions";
 import { ActivateTagForm } from "./ActivateTagForm";
+import { ClaimLoginGate } from "./ClaimLoginGate";
+import { ClaimPetForm } from "./ClaimPetForm";
 import styles from "./emergency.module.css";
 
 // tag.BASE_DOMAIN/t/{token} — perfil público de emergencia. Sin login, sin
@@ -30,11 +34,31 @@ export default async function EmergencyPage({ params }: { params: Promise<{ toke
   const view = resolveScanView(tag, pet ?? null);
 
   if (view.view === "activation_pending") {
+    // Con ACCOUNT_REQUIRED_ON_ACTIVATION apagada (el default hoy — ver
+    // lib/env.ts sobre por qué), se mantiene el flujo de siempre: PIN, sin
+    // cuenta. Prendida, se reemplaza por login (email o Google) + un
+    // formulario con más campos, y la mascota queda protegida por esa cuenta
+    // en vez de un PIN — ver ClaimLoginGate/ClaimPetForm y /api/qr/claim.
+    if (!ACCOUNT_REQUIRED_ON_ACTIVATION) {
+      return (
+        <main className={styles.page}>
+          <p className={styles.emoji}>🐾</p>
+          <h1 className={styles.pendingTitle}>¡Hola! Todavía no tengo dueño</h1>
+          <ActivateTagForm token={token} />
+        </main>
+      );
+    }
+
+    const session = await auth.api.getSession({ headers: await headers() });
     return (
       <main className={styles.page}>
         <p className={styles.emoji}>🐾</p>
         <h1 className={styles.pendingTitle}>¡Hola! Todavía no tengo dueño</h1>
-        <ActivateTagForm token={token} />
+        {session ? (
+          <ClaimPetForm token={token} />
+        ) : (
+          <ClaimLoginGate googleEnabled={GOOGLE_LOGIN_ENABLED} />
+        )}
       </main>
     );
   }

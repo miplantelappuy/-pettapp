@@ -1,0 +1,69 @@
+"use client";
+
+import { useState } from "react";
+import { authClient } from "@/lib/auth-client";
+import styles from "./emergency.module.css";
+
+// Puerta de entrada cuando ACCOUNT_REQUIRED_ON_ACTIVATION está prendida:
+// antes de poder cargar a la mascota, hay que iniciar sesión. callbackURL
+// apunta a esta misma página (window.location.href, sin querystring propio)
+// para que, enlace mágico o Google, la persona vuelva exactamente acá — y
+// esta vez, con sesión, EmergencyPage le muestre ClaimPetForm en su lugar.
+export function ClaimLoginGate({ googleEnabled }: { googleEnabled: boolean }) {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  async function handleMagicLink(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("sending");
+    const { error } = await authClient.signIn.magicLink({
+      email,
+      callbackURL: window.location.href,
+    });
+    setStatus(error ? "error" : "sent");
+  }
+
+  async function handleGoogle() {
+    await authClient.signIn.social({ provider: "google", callbackURL: window.location.href });
+  }
+
+  if (status === "sent") {
+    return (
+      <div className={`${styles.activateForm} glass`}>
+        <p className={styles.activateLead}>
+          Te mandamos un enlace a <strong>{email}</strong>. Tocalo desde este mismo celular para volver acá y cargar
+          a tu mascota (vence en 15 minutos).
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${styles.activateForm} glass`}>
+      <p className={styles.activateLead}>
+        Para vincular esta chapita, primero iniciá sesión — así la mascota queda protegida por tu cuenta (podés
+        recuperar el acceso si perdés el celular, y más adelante sumar a alguien más de la familia).
+      </p>
+
+      {googleEnabled && (
+        <button type="button" className="accentButton" onClick={handleGoogle}>
+          Continuar con Google
+        </button>
+      )}
+
+      <form className={styles.field} onSubmit={handleMagicLink} style={{ gap: "0.75rem" }}>
+        <input
+          type="email"
+          required
+          placeholder="tu@email.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <button type="submit" className="glassButton" disabled={status === "sending"}>
+          {status === "sending" ? "Enviando…" : "Entrar con enlace por email"}
+        </button>
+      </form>
+      {status === "error" && <p className={styles.errorMsg}>No se pudo enviar el enlace. Probá de nuevo.</p>}
+    </div>
+  );
+}

@@ -67,3 +67,31 @@ export async function hasPetAccess(petId: string): Promise<boolean> {
   const token = store.get(petAccessCookieName(petId))?.value;
   return verifyPetAccessToken(petId, token);
 }
+
+// Enlace para "sumar a otro dueño" a la mascota (ver /api/pets/[petId]/share-link
+// y /join/[token]): mismo esquema de firma que signPetAccessToken de arriba
+// (HMAC con BETTER_AUTH_SECRET, sin estado en el servidor), pero firma el
+// organizationId de la mascota en vez de su id — quien abre el enlace y
+// inicia sesión (o ya tiene sesión) queda sumado como miembro de ESA
+// organización, sin importar con qué chapita se generó el enlace. Vence
+// pronto (7 días) porque, a diferencia del acceso por PIN, esto reparte
+// acceso de administración real a otra persona.
+const INVITE_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 días
+
+export function signOrgInviteToken(organizationId: string): string {
+  const expires = Date.now() + INVITE_TTL_MS;
+  const sig = createHmac("sha256", SECRET).update(`org.${organizationId}.${expires}`).digest("hex");
+  return `${expires}.${sig}.${organizationId}`;
+}
+
+export function verifyOrgInviteToken(token: string | undefined | null): string | null {
+  if (!token) return null;
+  const [expiresStr, sig, organizationId] = token.split(".");
+  const expires = Number(expiresStr);
+  if (!expires || !sig || !organizationId || Number.isNaN(expires) || Date.now() > expires) return null;
+  const expected = createHmac("sha256", SECRET).update(`org.${organizationId}.${expires}`).digest("hex");
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return null;
+  return timingSafeEqual(a, b) ? organizationId : null;
+}

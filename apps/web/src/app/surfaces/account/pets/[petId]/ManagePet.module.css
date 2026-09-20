@@ -351,3 +351,24 @@
   gap: 0.6rem;
   margin-top: 0.85rem;
 }
+
+/* Enlace de "Compartir esta mascota" — el input es de solo lectura, existe
+   para poder seleccionar/copiar el texto a mano si el botón de Copiar
+   fallara (ver copyShareLink en ManagePet.tsx). */
+.shareLinkRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.shareLinkRow input {
+  flex: 1;
+  min-width: 200px;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg-soft);
+  color: var(--color-cloud-dim);
+}
