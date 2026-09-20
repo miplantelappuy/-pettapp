@@ -25,7 +25,15 @@ export default async function AccountPage() {
     );
   }
 
-  const orgs = await auth.api.listOrganizations({ headers: hdrs });
+  // TypeScript no logra inferir el tipo del endpoint "listOrganizations" que
+  // agrega el plugin organization (pasa con esta versión de better-auth,
+  // aunque el método sí existe y funciona en tiempo de ejecución — ver
+  // https://better-auth.com/docs/plugins/organization). Se tipa a mano acá
+  // nomás, sin perder el chequeo de tipos en el resto del archivo.
+  const orgApi = auth.api as unknown as {
+    listOrganizations: (args: { headers: Headers }) => Promise<Array<{ id: string }> | null>;
+  };
+  const orgs = await orgApi.listOrganizations({ headers: hdrs });
   const organizationId = orgs?.[0]?.id;
   const pets = organizationId
     ? await db.query.pets.findMany({ where: eq(schema.pets.organizationId, organizationId) })
