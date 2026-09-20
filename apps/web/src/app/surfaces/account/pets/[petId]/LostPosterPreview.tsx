@@ -20,7 +20,11 @@ interface Props {
 export function LostPosterPreview({ petId, petName }: Props) {
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
-  const posterUrl = `/api/pets/${petId}/lost-poster`;
+  // El "?v=" no lo lee el servidor para nada — es solo para que el
+  // navegador nunca confunda esto con la misma imagen de una visita
+  // anterior y se quede con una copia vieja en vez de pedir una nueva.
+  const [cacheBust] = useState(() => Date.now());
+  const posterUrl = `/api/pets/${petId}/lost-poster?v=${cacheBust}`;
   const fileName = `${petName}-se-busca.png`;
 
   async function handleShare() {

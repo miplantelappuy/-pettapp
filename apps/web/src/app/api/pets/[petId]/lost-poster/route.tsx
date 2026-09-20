@@ -293,6 +293,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         )}
       </div>
     ),
-    { width: WIDTH, height: HEIGHT },
+    {
+      width: WIDTH,
+      height: HEIGHT,
+      // Sin esto, el navegador puede quedarse con la primera imagen que pidió
+      // en esta URL (que no cambia entre versiones) y no volver a pedirla
+      // nunca más — por eso después de la entrega anterior seguía viéndose
+      // igual aunque el servidor ya generaba la versión nueva. El cartel se
+      // arma de nuevo en cada pedido, así que nunca debería quedar en caché.
+      headers: { "Cache-Control": "no-store, must-revalidate" },
+    },
   );
 }
