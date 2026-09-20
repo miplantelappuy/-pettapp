@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { like } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
 import { emergencyPath, scanUrlFor } from "@/lib/env";
+import { requireAdminSession } from "@/lib/authz";
 
 interface Body {
   count?: number;
@@ -11,15 +12,18 @@ interface Body {
 const MAX_PER_BATCH = 20;
 
 // POST /api/dev/seed-tags
-// Hermano de /api/qr/generate-batch pero SIN pedir sesión — existe para que
-// Facundo pueda crear chapitas de prueba con un botón desde /panel sin tener
-// que loguearse primero (hoy el login por magic-link no manda mail de
-// verdad: RESEND_API_KEY no está configurada). Mismo criterio que las
-// páginas /preview-*: es una herramienta de esta etapa (fase 0, un solo
-// operador probando el producto) — antes de compartir la app con nadie más
-// hay que sacar esto o ponerle un control de acceso de verdad, igual que
-// generate-batch necesita un rol de admin real antes de vender.
+// Hermano de /api/qr/generate-batch, para el botón "Crear chapita de
+// prueba" de /panel. Antes no pedía sesión (se creó cuando el login por
+// magic-link todavía no mandaba mail de verdad) — como /panel es una URL
+// pública sin ningún gate, eso significaba que cualquiera que la encontrara
+// podía crear chapitas reales en la base sin límite. Ahora que Google login
+// funciona, pide lo mismo que generate-batch (ver lib/authz.ts#requireAdminSession).
 export async function POST(request: NextRequest) {
+  const admin = await requireAdminSession(request.headers);
+  if (!admin.ok) {
+    return NextResponse.json({ error: admin.error }, { status: admin.status });
+  }
+
   const body = (await request.json().catch(() => ({}))) as Body;
   const count = Math.min(Math.max(Math.trunc(body.count ?? 1), 1), MAX_PER_BATCH);
 

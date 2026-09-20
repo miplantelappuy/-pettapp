@@ -116,3 +116,22 @@ export function scanUrlFor(token: string): string {
   if (!HAS_CUSTOM_DOMAIN) return urlFor(null, emergencyPath(token));
   return urlFor("tag", emergencyPath(token));
 }
+
+// Lista de emails con acceso a las herramientas de operador (generar lotes
+// de chapitas, ver /app/qr, crear chapitas de prueba desde /panel) — hasta
+// que exista un rol de admin de verdad en la base de datos. Separados por
+// coma en la variable de entorno (ej: "facundo@gmail.com,otro@gmail.com").
+// A propósito, MIENTRAS esta variable no esté cargada en Railway, isAdminEmail
+// deja pasar a cualquier cuenta logueada (el criterio de siempre) — así
+// cargar esta variable es lo único que hace falta para empezar a restringir,
+// sin romper nada mientras tanto.
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
+  .split(",")
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
+
+export function isAdminEmail(email: string | null | undefined): boolean {
+  if (ADMIN_EMAILS.length === 0) return true;
+  if (!email) return false;
+  return ADMIN_EMAILS.includes(email.toLowerCase());
+}

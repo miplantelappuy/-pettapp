@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
 import { auth } from "@/lib/auth";
+import { hasPetAccess } from "@/lib/pin";
 import { replaceTag, QrTagError } from "@/lib/qr";
 
 interface ReplaceBody {
@@ -11,14 +12,14 @@ interface ReplaceBody {
 
 // POST /api/qr/replace
 // Chapita perdida/dañada: la mascota conserva perfil, recuerdos e historial
-// intactos — solo cambia qué chapita física está vigente.
+// intactos — solo cambia qué chapita física está vigente. Sin UI todavía que
+// llame a esto (no hay botón "reemplazar chapita" en ningún lado) pero la
+// ruta queda accesible igual, así que el chequeo de dueño de abajo no es
+// opcional: sin él, cualquier cuenta logueada podía "robar" la chapita
+// activa de la mascota de otra persona con solo saber (o adivinar) los dos
+// tokens.
 export async function POST(request: NextRequest) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
-
-  const body = (await request.json()) as ReplaceBody;
+  const body = (await request.json().catch(() => null)) as ReplaceBody | null;
   if (!body?.oldPublicToken || !body?.newPublicToken) {
     return NextResponse.json({ error: "Faltan campos" }, { status: 400 });
   }
@@ -30,9 +31,30 @@ export async function POST(request: NextRequest) {
   if (!oldTag || !newTag) {
     return NextResponse.json({ error: "Chapita no encontrada" }, { status: 404 });
   }
+  if (!oldTag.petId) {
+    return NextResponse.json({ error: "Esa chapita no está vinculada a ninguna mascota" }, { status: 409 });
+  }
 
-  // TODO Fase 1: verificar que oldTag.petId pertenezca a una organización
-  // donde `session.user` es miembro, antes de permitir el reemplazo.
+  // Mismo criterio de siempre (PIN de la mascota, o sesión + membresía en su
+  // organización — ver lib/authz.ts#assertPetOwnership) para decidir quién
+  // puede tocar ESTA mascota en particular.
+  const petId = oldTag.petId;
+  let authorized = await hasPetAccess(petId);
+  if (!authorized) {
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (session) {
+      const pet = await db.query.pets.findFirst({ where: eq(schema.pets.id, petId) });
+      if (pet) {
+        const membership = await db.query.member.findFirst({
+          where: and(eq(schema.member.organizationId, pet.organizationId), eq(schema.member.userId, session.user.id)),
+        });
+        authorized = Boolean(membership);
+      }
+    }
+  }
+  if (!authorized) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
 
   try {
     const { oldTagPatch, newTagPatch } = replaceTag(oldTag, newTag);

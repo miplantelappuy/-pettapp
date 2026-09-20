@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { randomUUID } from "node:crypto";
 import { like } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
-import { auth } from "@/lib/auth";
+import { requireAdminSession } from "@/lib/authz";
 
 interface Body {
   count?: number;
@@ -13,13 +13,12 @@ const MAX_PER_BATCH = 50;
 // POST /api/qr/generate-batch
 // Genera chapitas SIN asignar (status "unassigned"), listas para imprimir y
 // regalar/vender — alguien recién las vincula a una mascota cuando activa la
-// suya en /app. Protegido solo por "estar logueado": alcanza para esta
-// etapa (Fase 0/1, un solo operador probando el producto); antes de vender
-// de verdad hace falta un rol de admin de verdad acá, no cualquier cuenta.
+// suya en /app. Restringido a operador (ver lib/authz.ts#requireAdminSession
+// + lib/env.ts#ADMIN_EMAILS) en vez de "cualquier cuenta logueada".
 export async function POST(request: NextRequest) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const admin = await requireAdminSession(request.headers);
+  if (!admin.ok) {
+    return NextResponse.json({ error: admin.error }, { status: admin.status });
   }
 
   const body = (await request.json().catch(() => ({}))) as Body;

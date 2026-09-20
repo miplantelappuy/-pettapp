@@ -1,11 +1,20 @@
+import { headers } from "next/headers";
 import { SeedTagButton } from "./PanelClient";
+import { requireAdminSession } from "@/lib/authz";
 import styles from "./panel.module.css";
 
 // Un solo link para Facundo: todo lo que está construido hasta ahora, con
 // botones simples, sin tener que recordar ni escribir distintas URLs de
 // vista previa. Guardá esta página en favoritos — es el punto de entrada
 // mientras no haya una cuenta real ni dominio propio.
-export default function PanelPage() {
+//
+// Esta URL en sí sigue siendo pública (solo son vistas de ejemplo /
+// preview-*, sin datos reales) — pero "Crear chapita de prueba" escribe en
+// la base de verdad, así que ese botón en particular ahora pide sesión de
+// operador (ver lib/authz.ts#requireAdminSession) en vez de estar abierto a
+// cualquiera que encuentre este link.
+export default async function PanelPage() {
+  const admin = await requireAdminSession(await headers());
   return (
     <main className={styles.page}>
       <h1 className={styles.title}>Panel de control</h1>
@@ -21,7 +30,13 @@ export default function PanelPage() {
           encontrada&quot;. Con este botón se crea una chapita real (como si fuera una física recién comprada) y te
           lleva directo a activarla con tu mascota.
         </p>
-        <SeedTagButton />
+        {admin.ok ? (
+          <SeedTagButton />
+        ) : (
+          <p className={styles.sectionText}>
+            Iniciá sesión en <a href="/app">/app</a> con tu cuenta para poder crear chapitas de prueba desde acá.
+          </p>
+        )}
       </section>
 
       <section className={`${styles.section} glass`}>

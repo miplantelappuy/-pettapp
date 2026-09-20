@@ -17,6 +17,7 @@ interface SeededTag {
 export function SeedTagButton() {
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [tag, setTag] = useState<SeededTag | null>(null);
+  const [errorMsg, setErrorMsg] = useState("No se pudo crear la chapita. Probá de nuevo.");
 
   async function handleClick() {
     setStatus("loading");
@@ -27,11 +28,15 @@ export function SeedTagButton() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ count: 1 }),
       });
-      if (!res.ok) throw new Error("No se pudo crear la chapita");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? "No se pudo crear la chapita");
+      }
       const data = await res.json();
       setTag(data.tags[0]);
       setStatus("idle");
-    } catch {
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "No se pudo crear la chapita. Probá de nuevo.");
       setStatus("error");
     }
   }
@@ -44,7 +49,7 @@ export function SeedTagButton() {
         </button>
       </div>
 
-      {status === "error" && <p className={styles.errorMsg}>No se pudo crear la chapita. Probá de nuevo.</p>}
+      {status === "error" && <p className={styles.errorMsg}>{errorMsg}</p>}
 
       {tag && (
         <div className={`${styles.result} glass`}>

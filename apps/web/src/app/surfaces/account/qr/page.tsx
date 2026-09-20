@@ -2,23 +2,24 @@ import { headers } from "next/headers";
 import { desc } from "drizzle-orm";
 import * as QRCode from "qrcode";
 import { db, schema } from "@pettapp/db";
-import { auth } from "@/lib/auth";
+import { requireAdminSession } from "@/lib/authz";
 import { scanUrlFor } from "@/lib/env";
 import { GenerateQrBatch } from "./GenerateQrBatch";
 import styles from "../account.module.css";
 import pageStyles from "./qr.module.css";
 
 // Panel para generar chapitas de regalo/venta en lote y tener a mano el QR
-// de cada una lista para imprimir. Gateado solo por sesión iniciada —
-// alcanza mientras el único que entra acá sos vos probando el producto;
-// antes de vender de verdad esto necesita un rol de admin de verdad, no
-// "cualquier cuenta logueada".
+// de cada una lista para imprimir. Restringido a operador (ver
+// lib/authz.ts#requireAdminSession + lib/env.ts#ADMIN_EMAILS) en vez de
+// "cualquier cuenta logueada" — esta lista muestra las últimas 60 chapitas
+// de TODO el sistema, no solo las tuyas, así que no puede quedar abierta a
+// cualquier cuenta el día que haya más de un cliente con cuenta propia.
 export default async function QrAdminPage() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) {
+  const admin = await requireAdminSession(await headers());
+  if (!admin.ok) {
     return (
       <main className={styles.page}>
-        <p>Necesitás iniciar sesión.</p>
+        <p>{admin.status === 401 ? "Necesitás iniciar sesión." : "Esta cuenta no tiene acceso a este panel."}</p>
       </main>
     );
   }

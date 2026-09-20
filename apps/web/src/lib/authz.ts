@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { db, schema } from "@pettapp/db";
 import { auth } from "./auth";
 import { hasPetAccess } from "./pin";
+import { isAdminEmail } from "./env";
 
 // Único punto donde se decide "¿esta persona puede administrar esta
 // mascota?" — todas las rutas de API que dejan editar fotos, estilo, datos
@@ -37,4 +38,19 @@ export async function assertPetOwnership(request: NextRequest, petId: string) {
   }
 
   return { ok: true as const, session, pet };
+}
+
+// Gate para las herramientas de operador (generar lotes de chapitas, ver
+// /app/qr, crear chapitas de prueba desde /panel): hace falta sesión SIEMPRE
+// (antes /api/dev/seed-tags no pedía ni eso) y, si ADMIN_EMAILS está
+// configurada en Railway, además que el email de esa sesión esté en la
+// lista (ver lib/env.ts#isAdminEmail) — mientras no esté configurada, pasa
+// cualquier cuenta logueada, igual que antes.
+export async function requireAdminSession(requestHeaders: Headers) {
+  const session = await auth.api.getSession({ headers: requestHeaders });
+  if (!session) return { ok: false as const, error: "No autenticado", status: 401 as const };
+  if (!isAdminEmail(session.user.email)) {
+    return { ok: false as const, error: "No autorizado", status: 403 as const };
+  }
+  return { ok: true as const, session };
 }
