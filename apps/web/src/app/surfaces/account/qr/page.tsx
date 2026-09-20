@@ -5,6 +5,7 @@ import { db, schema } from "@pettapp/db";
 import { requireAdminSession } from "@/lib/authz";
 import { scanUrlFor } from "@/lib/env";
 import { GenerateQrBatch } from "./GenerateQrBatch";
+import { ReplaceTagForm } from "./ReplaceTagForm";
 import styles from "../account.module.css";
 import pageStyles from "./qr.module.css";
 
@@ -45,6 +46,8 @@ export default async function QrAdminPage() {
       </p>
 
       <GenerateQrBatch />
+
+      <ReplaceTagForm />
 
       <ul className={pageStyles.grid}>
         {withQr.map((tag) => (

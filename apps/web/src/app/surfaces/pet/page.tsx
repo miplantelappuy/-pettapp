@@ -6,6 +6,7 @@ import { getVaccinations } from "@/lib/vaccinations-data";
 import { getMilestones } from "@/lib/milestones-data";
 import { getSurfacePrefix } from "@/lib/surface-prefix";
 import { hasOwnerAccess } from "@/lib/pin";
+import { GOOGLE_LOGIN_ENABLED, EMAIL_LOGIN_ENABLED } from "@/lib/env";
 import { OwnerHome } from "./OwnerHome";
 import { PetPinGate } from "./PetPinGate";
 
@@ -31,7 +32,14 @@ export default async function PetHomePage() {
   // tuvieron PIN).
   const authorized = await hasOwnerAccess(pet.id, hdrs);
   if (!authorized) {
-    return <PetPinGate petId={pet.id} petName={pet.name} />;
+    return (
+      <PetPinGate
+        petId={pet.id}
+        petName={pet.name}
+        googleEnabled={GOOGLE_LOGIN_ENABLED}
+        emailEnabled={EMAIL_LOGIN_ENABLED}
+      />
+    );
   }
 
   // findMany + length en vez de un count() agregado: son pocas filas por

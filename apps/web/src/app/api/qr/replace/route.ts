@@ -1,23 +1,25 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { db, schema } from "@pettapp/db";
 import { auth } from "@/lib/auth";
 import { hasPetAccess } from "@/lib/pin";
+import { isAdminEmail } from "@/lib/env";
 import { replaceTag, QrTagError } from "@/lib/qr";
 
 interface ReplaceBody {
+  // Acepta el código corto ("PET-000123", el que se ve/imprime) o el token
+  // largo indistintamente — igual criterio que /api/qr/claim, para que se
+  // pueda operar esto a mano con lo que hay a la vista en /app/qr.
   oldPublicToken: string;
   newPublicToken: string;
 }
 
 // POST /api/qr/replace
 // Chapita perdida/dañada: la mascota conserva perfil, recuerdos e historial
-// intactos — solo cambia qué chapita física está vigente. Sin UI todavía que
-// llame a esto (no hay botón "reemplazar chapita" en ningún lado) pero la
-// ruta queda accesible igual, así que el chequeo de dueño de abajo no es
-// opcional: sin él, cualquier cuenta logueada podía "robar" la chapita
-// activa de la mascota de otra persona con solo saber (o adivinar) los dos
-// tokens.
+// intactos — solo cambia qué chapita física está vigente. El chequeo de
+// dueño de abajo no es opcional: sin él, cualquier cuenta logueada podía
+// "robar" la chapita activa de la mascota de otra persona con solo saber
+// (o adivinar) los dos códigos.
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as ReplaceBody | null;
   if (!body?.oldPublicToken || !body?.newPublicToken) {
@@ -25,8 +27,12 @@ export async function POST(request: NextRequest) {
   }
 
   const [oldTag, newTag] = await Promise.all([
-    db.query.qrTags.findFirst({ where: eq(schema.qrTags.publicToken, body.oldPublicToken) }),
-    db.query.qrTags.findFirst({ where: eq(schema.qrTags.publicToken, body.newPublicToken) }),
+    db.query.qrTags.findFirst({
+      where: or(eq(schema.qrTags.publicToken, body.oldPublicToken), eq(schema.qrTags.publicCode, body.oldPublicToken)),
+    }),
+    db.query.qrTags.findFirst({
+      where: or(eq(schema.qrTags.publicToken, body.newPublicToken), eq(schema.qrTags.publicCode, body.newPublicToken)),
+    }),
   ]);
   if (!oldTag || !newTag) {
     return NextResponse.json({ error: "Chapita no encontrada" }, { status: 404 });
@@ -35,14 +41,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Esa chapita no está vinculada a ninguna mascota" }, { status: 409 });
   }
 
-  // Mismo criterio de siempre (PIN de la mascota, o sesión + membresía en su
-  // organización — ver lib/authz.ts#assertPetOwnership) para decidir quién
-  // puede tocar ESTA mascota en particular.
+  // Tres caminos válidos: PIN de la mascota, sesión + membresía en su
+  // organización (mismo criterio de siempre — ver lib/authz.ts), o una
+  // cuenta de operador (ver lib/env.ts#isAdminEmail) — hace falta este
+  // tercer camino porque hoy sos vos, no el dueño de cada mascota, quien
+  // hace el reemplazo cuando un cliente te avisa que perdió la chapita.
   const petId = oldTag.petId;
+  const session = await auth.api.getSession({ headers: request.headers });
   let authorized = await hasPetAccess(petId);
-  if (!authorized) {
-    const session = await auth.api.getSession({ headers: request.headers });
-    if (session) {
+  if (!authorized && session) {
+    if (isAdminEmail(session.user.email)) {
+      authorized = true;
+    } else {
       const pet = await db.query.pets.findFirst({ where: eq(schema.pets.id, petId) });
       if (pet) {
         const membership = await db.query.member.findFirst({

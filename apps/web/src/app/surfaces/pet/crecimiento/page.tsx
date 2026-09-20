@@ -3,6 +3,7 @@ import { getPetHomeData } from "@/lib/pets-data";
 import { getMilestones } from "@/lib/milestones-data";
 import { getSurfacePrefix } from "@/lib/surface-prefix";
 import { hasOwnerAccess } from "@/lib/pin";
+import { GOOGLE_LOGIN_ENABLED, EMAIL_LOGIN_ENABLED } from "@/lib/env";
 import { PetPinGate } from "../PetPinGate";
 import { GrowthPath } from "./GrowthPath";
 
@@ -22,7 +23,14 @@ export default async function CrecimientoPage() {
 
   const authorized = await hasOwnerAccess(pet.id, hdrs);
   if (!authorized) {
-    return <PetPinGate petId={pet.id} petName={pet.name} />;
+    return (
+      <PetPinGate
+        petId={pet.id}
+        petName={pet.name}
+        googleEnabled={GOOGLE_LOGIN_ENABLED}
+        emailEnabled={EMAIL_LOGIN_ENABLED}
+      />
+    );
   }
 
   const milestones = await getMilestones(pet.id);

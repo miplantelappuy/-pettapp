@@ -5,6 +5,7 @@ import { getPetHomeData } from "@/lib/pets-data";
 import { getStorage } from "@/lib/storage";
 import { getSurfacePrefix } from "@/lib/surface-prefix";
 import { hasOwnerAccess } from "@/lib/pin";
+import { GOOGLE_LOGIN_ENABLED, EMAIL_LOGIN_ENABLED } from "@/lib/env";
 import { PetPinGate } from "../PetPinGate";
 import { RegalosClient } from "./RegalosClient";
 
@@ -24,7 +25,14 @@ export default async function RegalosPage() {
 
   const authorized = await hasOwnerAccess(pet.id, hdrs);
   if (!authorized) {
-    return <PetPinGate petId={pet.id} petName={pet.name} />;
+    return (
+      <PetPinGate
+        petId={pet.id}
+        petName={pet.name}
+        googleEnabled={GOOGLE_LOGIN_ENABLED}
+        emailEnabled={EMAIL_LOGIN_ENABLED}
+      />
+    );
   }
 
   const gifts = await db.query.petGifts.findMany({

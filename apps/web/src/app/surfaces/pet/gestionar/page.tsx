@@ -5,7 +5,7 @@ import { getVaccinations } from "@/lib/vaccinations-data";
 import { getMilestones } from "@/lib/milestones-data";
 import { getEmergencyFields } from "@/lib/emergency-fields-data";
 import { getSurfacePrefix } from "@/lib/surface-prefix";
-import { emergencyPath, scanUrlFor } from "@/lib/env";
+import { emergencyPath, scanUrlFor, GOOGLE_LOGIN_ENABLED, EMAIL_LOGIN_ENABLED } from "@/lib/env";
 import { hasOwnerAccess } from "@/lib/pin";
 import { PetPinGate } from "../PetPinGate";
 import { ManagePet } from "../../account/pets/[petId]/ManagePet";
@@ -30,7 +30,14 @@ export default async function GestionarPage() {
 
   const authorized = await hasOwnerAccess(pet.id, hdrs);
   if (!authorized) {
-    return <PetPinGate petId={pet.id} petName={pet.name} />;
+    return (
+      <PetPinGate
+        petId={pet.id}
+        petName={pet.name}
+        googleEnabled={GOOGLE_LOGIN_ENABLED}
+        emailEnabled={EMAIL_LOGIN_ENABLED}
+      />
+    );
   }
 
   const vaccinations = await getVaccinations(pet.id);
